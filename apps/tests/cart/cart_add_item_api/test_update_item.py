@@ -10,7 +10,7 @@ class TestUpdateItemQuantityView:
 
     @pytest.fixture
     def setup(self, user_factory, product_factory, api_client, tokens):
-        self.url = '/cart/update/'
+        self.url = '/api/cart/update/'
 
         self.user = user_factory()
         buyer_group = Group.objects.get(name="buyer")
