@@ -5,6 +5,8 @@ from django.core.management import call_command
 from faker import Faker
 from pytest_factoryboy import register
 from tests.factories.user_factory import UserFactory
+from tests.factories.category_factory import CategoryFactory
+from tests.factories.product_factory import ProductFactory
 
 try:
     from rest_framework.test import APIClient
@@ -17,6 +19,8 @@ except ImportError:
     pass
 
 register(UserFactory)
+register(CategoryFactory)
+register(ProductFactory)
 
 fake = Faker()
 
