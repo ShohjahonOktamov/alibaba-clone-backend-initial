@@ -16,9 +16,9 @@ class TestCartViews:
         self.access, _ = tokens(self.user)
         self.client = api_client(token=self.access)
 
-        self.url_get_total = '/cart/total/'
-        self.url_remove_item = '/cart/remove/{product_id}/'
-        self.url_empty_cart = '/cart/empty/'
+        self.url_get_total = '/api/cart/total/'
+        self.url_remove_item = '/api/cart/remove/{product_id}/'
+        self.url_empty_cart = '/api/cart/empty/'
 
         self.product1 = product_factory(title="product1", price=10.12, quantity=10)
         self.product2 = product_factory(title="product2", price=20.43, quantity=20)
