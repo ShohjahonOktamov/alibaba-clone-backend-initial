@@ -1,6 +1,32 @@
 import pytest
 from rest_framework import status
 from user.models import Group
+from core import settings
+
+
+@pytest.mark.order(1)
+def test_product_app_created():
+    assert "product" in settings.INSTALLED_APPS, "product app not installed"
+
+
+@pytest.mark.order(2)
+def test_product_app_exists():
+    app_name = 'product'
+
+    try:
+        import product  # noqa
+    except ImportError:
+        assert False, f"{app_name} app folder missing"
+    assert app_name in settings.INSTALLED_APPS, f"{app_name} app not installed"
+
+
+@pytest.mark.order(3)
+def test_product_model_created():
+    """
+    The function tests that the articles model is created.
+    """
+    from product.models import Category
+    assert Category._meta.db_table == "category", "Category model not created"
 
 
 @pytest.mark.django_db

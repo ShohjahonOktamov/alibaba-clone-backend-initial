@@ -63,7 +63,7 @@ class TestCheckoutCreateView:
             "address_line_2": "Apt 1"
         }
 
-        self.url = '/orders/checkout/'
+        self.url = '/api/orders/checkout/'
 
     def test_checkout_create_success(self):
         response = self.client.post(self.url, data=self.data, format='json')
