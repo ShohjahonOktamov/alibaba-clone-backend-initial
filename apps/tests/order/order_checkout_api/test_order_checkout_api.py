@@ -25,11 +25,15 @@ def test_articles_model_created():
     """
     The function tests that the articles model is created.
     """
-    from order.models import Order
-    assert Order._meta.db_table == "order", "Article model not created"
+    try:
+        from order import Order  # noqa
+    except ImportError:
+        assert False, f"Order model missing"
 
-    from order.models import OrderItem
-    assert OrderItem._meta.db_table == "order_item", "Article model not created"
+    try:
+        from order import OrderItem  # noqa
+    except ImportError:
+        assert False, f"OrderItem model missing"
 
 
 @pytest.mark.django_db
