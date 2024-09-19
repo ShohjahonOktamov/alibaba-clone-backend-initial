@@ -1,6 +1,35 @@
 import pytest
 from rest_framework import status
 from user.models import Group
+from core import settings
+
+
+@pytest.mark.order(1)
+def test_orders_app_created():
+    assert "order" in settings.INSTALLED_APPS, "order app not installed"
+
+
+@pytest.mark.order(2)
+def test_orders_app_exists():
+    app_name = 'order'
+
+    try:
+        import order  # noqa
+    except ImportError:
+        assert False, f"{app_name} app folder missing"
+    assert app_name in settings.INSTALLED_APPS, f"{app_name} app not installed"
+
+
+@pytest.mark.order(3)
+def test_articles_model_created():
+    """
+    The function tests that the articles model is created.
+    """
+    from order.models import Order
+    assert Order._meta.db_table == "order", "Article model not created"
+
+    from order.models import OrderItem
+    assert OrderItem._meta.db_table == "order_item", "Article model not created"
 
 
 @pytest.mark.django_db
@@ -34,7 +63,7 @@ class TestCheckoutCreateView:
             "address_line_2": "Apt 1"
         }
 
-        self.url = '/api/orders/checkout/'
+        self.url = '/orders/checkout/'
 
     def test_checkout_create_success(self):
         response = self.client.post(self.url, data=self.data, format='json')
