@@ -26,7 +26,7 @@ def test_product_model_created():
     The function tests that the articles model is created.
     """
     try:
-        from product import Category  # noqa
+        from product.models import Category  # noqa
     except ImportError:
         assert False, f"Category model missing"
 

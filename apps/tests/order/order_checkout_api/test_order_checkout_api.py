@@ -26,12 +26,12 @@ def test_articles_model_created():
     The function tests that the articles model is created.
     """
     try:
-        from order import Order  # noqa
+        from order.models import Order  # noqa
     except ImportError:
         assert False, f"Order model missing"
 
     try:
-        from order import OrderItem  # noqa
+        from order.models import OrderItem  # noqa
     except ImportError:
         assert False, f"OrderItem model missing"
 
