@@ -7,6 +7,8 @@ from pytest_factoryboy import register
 from tests.factories.user_factory import UserFactory
 from tests.factories.category_factory import CategoryFactory
 from tests.factories.product_factory import ProductFactory
+from tests.factories.order_factory import OrderFactory, OrderItemFactory
+from tests.factories.cart_factory import CartFactory, CartItemFactory
 
 try:
     from rest_framework.test import APIClient
@@ -21,6 +23,10 @@ except ImportError:
 register(UserFactory)
 register(CategoryFactory)
 register(ProductFactory)
+register(OrderFactory)
+register(CartFactory)
+register(CartItemFactory)
+register(OrderItemFactory)
 
 fake = Faker()
 
