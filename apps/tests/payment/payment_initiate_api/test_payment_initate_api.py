@@ -25,7 +25,7 @@ class TestPaymentCreateView:
 
         self.order = order_factory(user=self.user)
 
-        self.url = "/payment/{id}/initiate/".format(id=self.order.id)
+        self.url = "/api/payment/{id}/initiate/".format(id=self.order.id)
 
         self.valid_payload = {
             'card_number': '4242424242424242',

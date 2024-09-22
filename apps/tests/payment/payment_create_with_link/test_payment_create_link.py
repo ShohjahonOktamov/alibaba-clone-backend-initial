@@ -18,7 +18,7 @@ class TestPaymentLinkView:
         self.client = api_client(token=self.access)
 
         self.order = order_factory(user=self.user, status='pending', amount=100)
-        self.url = "/payment/{id}/create/link/".format(id=self.order.id)
+        self.url = "/api/payment/{id}/create/link/".format(id=self.order.id)
 
     @patch('stripe.checkout.Session.create')
     def test_payment_link_success(self, mock_create):

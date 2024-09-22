@@ -17,7 +17,7 @@ class TestPaymentStatusView:
         self.client = api_client(token=self.access)
 
         self.order = order_factory(user=self.user, status='pending')
-        self.url = "/payment/{id}/status/".format(id=self.order.id)
+        self.url = "/api/payment/{id}/status/".format(id=self.order.id)
 
     def test_payment_status_success(self):
         response = self.client.get(self.url)
@@ -42,7 +42,7 @@ class TestPaymentStatusView:
 
     def test_payment_status_order_not_found(self, api_client):
         non_existent_order_id = 9999
-        url = "/payment/{id}/status/".format(id=non_existent_order_id)
+        url = "/api/payment/{id}/status/".format(id=non_existent_order_id)
 
         response = self.client.get(url)
         assert response.status_code == status.HTTP_404_NOT_FOUND

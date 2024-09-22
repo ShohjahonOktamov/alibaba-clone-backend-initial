@@ -18,7 +18,7 @@ class TestPaymentSuccessView:
         self.client = api_client(token=self.access)
 
         self.order = order_factory(user=self.user, status='pending', transaction_id='sess_123')
-        self.url = "/payment/{id}/success/".format(id=self.order.id)
+        self.url = "/api/payment/{id}/success/".format(id=self.order.id)
 
     @patch('stripe.checkout.Session.retrieve')
     def test_payment_success_update(self, mock_retrieve):
@@ -31,7 +31,6 @@ class TestPaymentSuccessView:
         assert response.status_code == status.HTTP_200_OK
         assert response.data['detail'] == 'Order updated successfully.'
 
-        # Verify that the order status has been updated
         self.order.refresh_from_db()
         assert self.order.status == 'paid'
         assert self.order.is_paid is True

@@ -17,7 +17,7 @@ class TestPaymentCancelView:
         self.client = api_client(token=self.access)
 
         self.order = order_factory(user=self.user, status='pending')
-        self.url = "/payment/{id}/cancel/".format(id=self.order.id)
+        self.url = "/api/payment/{id}/cancel/".format(id=self.order.id)
 
     def test_payment_cancel_success(self):
         response = self.client.patch(self.url)

@@ -20,7 +20,7 @@ class TestPaymentConfirmView:
         self.client = api_client(token=self.access)
 
         self.order = order_factory(user=self.user, status='pending', transaction_id='pi_12345')
-        self.url = "/payment/{id}/confirm/".format(id=self.order.id)
+        self.url = "/api/payment/{id}/confirm/".format(id=self.order.id)
 
         self.cart = cart_factory(user=self.user)
         product1 = product_factory()
