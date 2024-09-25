@@ -9,6 +9,7 @@ from tests.factories.category_factory import CategoryFactory
 from tests.factories.product_factory import ProductFactory
 from tests.factories.order_factory import OrderFactory, OrderItemFactory
 from tests.factories.cart_factory import CartFactory, CartItemFactory
+from tests.factories.notification_factory import NotificationFactory
 
 try:
     from rest_framework.test import APIClient
@@ -27,6 +28,7 @@ register(OrderFactory)
 register(CartFactory)
 register(CartItemFactory)
 register(OrderItemFactory)
+register(NotificationFactory)
 
 fake = Faker()
 
