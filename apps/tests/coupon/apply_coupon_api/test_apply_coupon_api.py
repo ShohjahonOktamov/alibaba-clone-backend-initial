@@ -21,7 +21,7 @@ class TestApplyCouponView:
         self.access, _ = tokens(self.user)
         self.client = api_client(token=self.access)
 
-        self.url = '/coupons/apply/'
+        self.url = '/api/coupons/apply/'
 
         self.order = order_factory(user=self.user, status='pending')
 

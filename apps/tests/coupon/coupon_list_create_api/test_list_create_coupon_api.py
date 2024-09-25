@@ -20,7 +20,7 @@ class TestCouponListCreateView:
         self.access, _ = tokens(self.user)
         self.client = api_client(token=self.access)
 
-        self.url = '/coupons/'
+        self.url = '/api/coupons/'
 
     def create_coupon(self, code="DISCOUNT10", discount_type='percentage', discount_value=10, active=True):
         """Helper method to create a coupon."""
