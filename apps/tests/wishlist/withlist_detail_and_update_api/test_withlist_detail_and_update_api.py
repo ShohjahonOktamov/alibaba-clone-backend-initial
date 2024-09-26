@@ -27,7 +27,7 @@ class TestWishlistRetrieveDeleteView:
         self.product = product_factory()
         self.wishlist_item = wishlist_factory(created_by=self.user, product=self.product)
 
-        self.url = f'/api/wishlist/{self.product.id}/'
+        self.url = f'/api/wishlist/{self.wishlist_item.id}/'
 
     def test_retrieve_wishlist_item_success(self):
         """Test that an authenticated user can retrieve a specific wishlist item."""
