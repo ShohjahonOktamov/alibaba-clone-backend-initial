@@ -1,16 +1,11 @@
 import uuid
 
 import pytest
+
+from core import settings
 from django.core.management import call_command
 from faker import Faker
 from pytest_factoryboy import register
-from tests.factories.user_factory import UserFactory
-from tests.factories.category_factory import CategoryFactory
-from tests.factories.product_factory import ProductFactory
-from tests.factories.order_factory import OrderFactory, OrderItemFactory
-from tests.factories.cart_factory import CartFactory, CartItemFactory
-from tests.factories.notification_factory import NotificationFactory
-from tests.factories.wishlist_factory import WishlistFactory
 
 try:
     from rest_framework.test import APIClient
@@ -22,15 +17,42 @@ try:
 except ImportError:
     pass
 
-register(UserFactory)
-register(CategoryFactory)
-register(ProductFactory)
-register(OrderFactory)
-register(CartFactory)
-register(CartItemFactory)
-register(OrderItemFactory)
-register(NotificationFactory)
-register(WishlistFactory)
+if "user" in settings.INSTALLED_APPS:
+    from tests.factories.user_factory import UserFactory
+
+    register(UserFactory)
+
+if "product" in settings.INSTALLED_APPS:
+    from tests.factories.category_factory import CategoryFactory
+
+    register(CategoryFactory)
+
+if "product" in settings.INSTALLED_APPS:
+    from tests.factories.product_factory import ProductFactory
+
+    register(ProductFactory)
+
+if "order" in settings.INSTALLED_APPS:
+    from tests.factories.order_factory import OrderFactory, OrderItemFactory
+
+    register(OrderFactory)
+    register(OrderItemFactory)
+
+if "cart" in settings.INSTALLED_APPS:
+    from tests.factories.cart_factory import CartFactory, CartItemFactory
+
+    register(CartFactory)
+    register(CartItemFactory)
+
+if "wishlist" in settings.INSTALLED_APPS:
+    from tests.factories.wishlist_factory import WishlistFactory
+
+    register(WishlistFactory)
+
+if "notification" in settings.INSTALLED_APPS:
+    from tests.factories.notification_factory import NotificationFactory
+
+    register(NotificationFactory)
 
 fake = Faker()
 

@@ -57,4 +57,4 @@ class TestNotificationViews:
         client = api_client(token=access)
 
         response = client.patch(self.url_update, data)
-        assert response.statuclears_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_403_FORBIDDEN
