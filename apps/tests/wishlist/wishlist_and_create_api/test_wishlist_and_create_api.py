@@ -66,7 +66,7 @@ class TestWishlistListCreateView:
 
         response = self.client.post(self.url, data)
         assert response.status_code == status.HTTP_400_BAD_REQUEST
-        assert response.data['error'] == 'Product is already in the wishlist.'
+        assert response.data['detail'] == 'Product is already in the wishlist.'
 
     def test_add_nonexistent_product_to_wishlist(self):
         """Test that adding a non-existent product to the wishlist returns a 404 error."""
