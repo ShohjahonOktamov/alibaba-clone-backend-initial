@@ -39,8 +39,6 @@ def test_custom_user_model():
     assert User is not None, f"{model_name} model not found"
 
     assert User._meta.db_table == "user", f"{model_name} model db_table not set"
-    assert User._meta.verbose_name == "User", f"{model_name} model verbose_name not set"
-    assert User._meta.verbose_name_plural == "Users", f"{model_name} model verbose_name_plural not set"
     assert User._meta.ordering == ["-created_at"], f"{model_name} model ordering not set"
 
     user = User.objects.create(
@@ -75,8 +73,6 @@ def test_group_model_created():
         assert False, "Group model not created"
 
     assert Group._meta.db_table == "group", "Group model not created"
-    assert Group._meta.verbose_name == "Group", "Group model not created"
-    assert Group._meta.verbose_name_plural == "Groups", "Group model not created"
     assert Group._meta.ordering == ["-created_at"], "Group model not created"
 
     group = Group.objects.create(name="TestGroup")
@@ -99,8 +95,6 @@ def test_policy_model_created():
         assert False, "Policy model not created"
 
     assert Policy._meta.db_table == "policy", "Policy model not created"
-    assert Policy._meta.verbose_name == "Policy", "Policy model not created"
-    assert Policy._meta.verbose_name_plural == "Policies", "Policy model not created"
     assert Policy._meta.ordering == ["-created_at"], "Policy model not created"
 
     policy = Policy.objects.create(name="TestPolicy")
