@@ -1,6 +1,5 @@
 import pytest
 from rest_framework import status
-from user.models import Group
 from core import settings
 
 
@@ -36,6 +35,8 @@ class TestCategoryViewSet:
 
     @pytest.fixture(autouse=True)
     def setup(self, user_factory, tokens, api_client):
+        from user.models import Group
+
         self.api = '/api/products/categories/'
 
         self.user = user_factory()

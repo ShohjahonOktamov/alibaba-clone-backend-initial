@@ -1,6 +1,5 @@
 import pytest
 from rest_framework import status
-from user.models import Group
 from core import settings
 
 
@@ -21,7 +20,7 @@ def test_orders_app_exists():
 
 
 @pytest.mark.order(3)
-def test_articles_model_created():
+def test_order_model_created():
     """
     The function tests that the articles model is created.
     """
@@ -41,6 +40,8 @@ class TestCheckoutCreateView:
 
     @pytest.fixture(autouse=True)
     def setup(self, api_client, tokens, user_factory, cart_factory, cart_item_factory, product_factory):
+        from user.models import Group
+
         user = user_factory()
         buyer_group = Group.objects.get(name="buyer")
         user.groups.add(buyer_group)

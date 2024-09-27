@@ -1,17 +1,40 @@
 import pytest
 from rest_framework import status
-from coupon.models import Coupon
-from user.models import Group
 from django.utils import timezone
+from core import settings
 from datetime import timedelta
 
 
+@pytest.mark.order(1)
+def test_coupon_app_exists():
+    try:
+        import coupon
+    except ImportError:
+        assert False, "Coupon app is not installed."
+
+
+@pytest.mark.order(2)
+def test_coupon_app_created():
+    assert "coupon" in settings.INSTALLED_APPS, "coupon app not installed"
+
+
+@pytest.mark.order(3)
+def test_coupon_model_created():
+    try:
+        from coupon.models import Coupon
+    except ImportError:
+        assert False, "Coupon model is not created."
+
+
+@pytest.mark.order(4)
 @pytest.mark.django_db
 class TestCouponListCreateView:
 
     @pytest.fixture(autouse=True)
     def setup(self, api_client, user_factory, tokens):
         """Setup common variables for each test."""
+        from user.models import Group
+
         self.user = user_factory()
         seller_group = Group.objects.get(name="seller")
         self.user.groups.add(seller_group)
@@ -24,6 +47,8 @@ class TestCouponListCreateView:
 
     def create_coupon(self, code="DISCOUNT10", discount_type='percentage', discount_value=10, active=True):
         """Helper method to create a coupon."""
+        from coupon.models import Coupon
+
         return Coupon.objects.create(
             code=code,
             discount_type=discount_type,

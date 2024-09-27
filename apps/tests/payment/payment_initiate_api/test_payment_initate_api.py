@@ -1,9 +1,47 @@
 import pytest
 from unittest.mock import patch
 from rest_framework import status
-from user.models import Group
+from core import settings
 
 
+@pytest.mark.order(1)
+def test_payment_app_exists():
+    app_name = 'payment'
+
+    try:
+        import payment  # noqa
+    except ImportError:
+        assert False, f"{app_name} app folder missing"
+
+
+@pytest.mark.order(2)
+def test_payment_app_created():
+    assert "payment" in settings.INSTALLED_APPS, "payment app not installed"
+
+
+@pytest.mark.order(3)
+def test_stripe_exists():
+    try:
+        import stripe
+    except ImportError:
+        assert False, "Stripe is not installed."
+
+
+@pytest.mark.order(4)
+def test_stripe_keys_exist_in_settings():
+    assert hasattr(settings, 'STRIPE_TEST_PUBLIC_KEY'), "STRIPE_TEST_PUBLIC_KEY is missing in settings."
+    assert settings.STRIPE_TEST_PUBLIC_KEY, "STRIPE_TEST_PUBLIC_KEY is set but empty."
+    assert hasattr(settings, 'STRIPE_TEST_SECRET_KEY'), "STRIPE_TEST_SECRET_KEY is missing in settings."
+    assert settings.STRIPE_TEST_SECRET_KEY, "STRIPE_TEST_SECRET_KEY is set but empty."
+
+
+@pytest.mark.order(5)
+def test_stripe_keys_format():
+    assert settings.STRIPE_TEST_PUBLIC_KEY.startswith('pk_test_'), "STRIPE_TEST_PUBLIC_KEY format is invalid."
+    assert settings.STRIPE_TEST_SECRET_KEY.startswith('sk_test_'), "STRIPE_TEST_SECRET_KEY format is invalid."
+
+
+@pytest.mark.order(6)
 @pytest.mark.django_db
 class TestPaymentCreateView:
     PENDING = "pending"
@@ -14,6 +52,8 @@ class TestPaymentCreateView:
 
     @pytest.fixture(autouse=True)
     def setup(self, api_client, user_factory, order_factory, tokens):
+        from user.models import Group
+
         user = user_factory()
         buyer_group = Group.objects.get(name="buyer")
         user.groups.add(buyer_group)

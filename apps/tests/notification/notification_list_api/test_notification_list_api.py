@@ -1,12 +1,35 @@
 import pytest
 from rest_framework import status
-from user.models import Group
+from core import settings
+
+
+@pytest.mark.order(1)
+def test_notification_app_exists():
+    try:
+        import notification
+    except ImportError:
+        assert False, "Notification app is not installed."
+
+
+@pytest.mark.order(2)
+def test_notification_app_created():
+    assert "notification" in settings.INSTALLED_APPS, "notification app not installed"
+
+
+@pytest.mark.order(3)
+def test_notification_model_created():
+    try:
+        from notification.models import Notification
+    except ImportError:
+        assert False, "Notification model is not created."
 
 
 @pytest.mark.django_db
 class TestNotificationListView:
     @pytest.fixture(autouse=True)
     def setup(self, api_client, tokens, user_factory, notification_factory):
+        from user.models import Group
+
         self.user = user_factory()
         buyer_group = Group.objects.get(name="buyer")
         self.user.groups.add(buyer_group)

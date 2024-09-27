@@ -1,16 +1,39 @@
 import pytest
 from rest_framework import status
-from wishlist.models import Wishlist
-from user.models import Group
+from core import settings
 import uuid
 
 
+@pytest.mark.order(1)
+def test_wishlist_app_exists():
+    try:
+        import wishlist
+    except ImportError:
+        assert False, "Wishlist app is not installed."
+
+
+@pytest.mark.order(2)
+def test_wishlist_app_created():
+    assert "wishlist" in settings.INSTALLED_APPS, "wishlist app not installed"
+
+
+@pytest.mark.order(3)
+def test_notification_model_created():
+    try:
+        from wishlist.models import Wishlist
+    except ImportError:
+        assert False, "Wishlist model is not created."
+
+
+@pytest.mark.order(4)
 @pytest.mark.django_db
 class TestWishlistListCreateView:
 
     @pytest.fixture(autouse=True)
     def setup(self, api_client, user_factory, tokens, product_factory):
         """Setup necessary data for each test."""
+        from user.models import Group
+
         self.user = user_factory()
         buyer_group = Group.objects.get(name="buyer")
         self.user.groups.add(buyer_group)
@@ -46,6 +69,8 @@ class TestWishlistListCreateView:
 
     def test_add_product_to_wishlist_success(self):
         """Test that a product can be added to the wishlist successfully."""
+        from wishlist.models import Wishlist
+
         data = {
             'product_id': str(self.product.id)
         }

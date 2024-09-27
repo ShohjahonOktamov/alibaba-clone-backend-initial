@@ -1,13 +1,47 @@
 import pytest
 from rest_framework import status
-from cart.models import Cart, CartItem
-from user.models import Group
+from core import settings
+
+
+@pytest.mark.order(1)
+def test_cart_app_created():
+    assert "cart" in settings.INSTALLED_APPS, "cart app not installed"
+
+
+@pytest.mark.order(2)
+def test_cart_app_exists():
+    app_name = 'cart'
+
+    try:
+        import cart  # noqa
+    except ImportError:
+        assert False, f"{app_name} app folder missing"
+    assert app_name in settings.INSTALLED_APPS, f"{app_name} app not installed"
+
+
+@pytest.mark.order(3)
+def test_cart_model_created():
+    """
+    The function tests that the articles model is created.
+    """
+    try:
+        from cart.models import Cart  # noqa
+    except ImportError:
+        assert False, f"Cart model missing"
+
+    try:
+        from cart.models import CartItem  # noqa
+    except ImportError:
+        assert False, f"CartItem model missing"
 
 
 @pytest.mark.django_db
 class TestCartViews:
     @pytest.fixture(autouse=True)
     def setup(self, api_client, tokens, user_factory, product_factory):
+        from cart.models import Cart, CartItem
+        from user.models import Group
+
         self.user = user_factory()
         buyer_group = Group.objects.get(name="buyer")
         self.user.groups.add(buyer_group)
