@@ -16,7 +16,7 @@ services:
       - ecommerce_db
       - ecommerce_redis_host
     networks:
-      ecommerce_network:
+      - ecommerce_network
 
   ecommerce_redis_host:
     container_name: ecommerce_redis_host
@@ -31,18 +31,13 @@ services:
 
   ecommerce_db:
     container_name: ecommerce_db
-    image: postgres:15-alpine
-    restart: always
-    env_file:
-      - .env.example
-    expose:
-      - "5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    image: postgres:15
     environment:
-      - POSTGRES_USER=${DB_USER-ecommerce_user}
-      - POSTGRES_PASSWORD=${DB_PASSWORD-ecommerce_user_password}
-      - POSTGRES_DB=${DB_NAME-ecommerce_db}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ecommerce_password
+      POSTGRES_DB: ecommerce_database
+    volumes:
+      - ecommerce_db_data:/var/lib/postgresql/data
     networks:
       - ecommerce_network
 
@@ -63,5 +58,5 @@ networks:
   ecommerce_network:
 
 volumes:
-  postgres_data:
+  ecommerce_db_data:
   static_volume:
