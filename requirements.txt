@@ -12,6 +12,8 @@ packaging==24.1
 pillow
 pluggy==1.5.0
 pre-commit==3.6.0
+psycopg2
+psycopg2-binary
 pytest==8.2.1
 pytest-django==4.8.0
 pytest-factoryboy==2.7.0
