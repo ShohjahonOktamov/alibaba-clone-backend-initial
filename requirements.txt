@@ -25,5 +25,3 @@ sortedcontainers==2.4.0
 sqlparse==0.5.1
 typing_extensions==4.12.2
 virtualenv==20.26.5
-pytest-pretty==1.2.0
-pytest-clarity==1.0.1
