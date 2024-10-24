@@ -75,7 +75,7 @@ jobs:
 
       - name: Run application tests via pytest
         working-directory: forked-repo
-        run: docker compose exec ecommerce_app pytest ${{ github.event.inputs.tests_path }} --cache-clear -vv --json-report --json-report-file=./reports/unittest-checker-report.json --json-report-indent=2
+        run: docker compose exec ecommerce_app pytest ${{ github.event.inputs.tests_path }} --cache-clear -vv --diff-symbols --json-report --json-report-file=./reports/unittest-checker-report.json --json-report-indent=2
         continue-on-error: true
 
       - name: Upload created pytest report file as an artifact
