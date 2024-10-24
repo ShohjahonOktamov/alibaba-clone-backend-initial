@@ -1,12 +1,14 @@
 name: Alibaba Clone Project CI/CD
-
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      tests_path:
+        description: 'Tests path'
+        required: false
+        default: ''
+      github_feedback_id:
+        description: 'Github feedback id'
+        required: true
 
 jobs:
   deploy:
