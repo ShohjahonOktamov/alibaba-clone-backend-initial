@@ -62,7 +62,7 @@ class User(AbstractBaseUser, PermissionsMixin, Model):
     is_active: BooleanField = BooleanField(default=False)
     created_by: ForeignKey = ForeignKey(to="User", null=True, on_delete=CASCADE)
     created_at: DateTimeField = DateTimeField(auto_now_add=True)
-    updated_at: DateTimeField = DateTimeField(auto_now_add=True)
+    updated_at: DateTimeField = DateTimeField(auto_now=True)
 
     USERNAME_FIELD: str = 'email'
 
@@ -86,7 +86,7 @@ class Policy(Model):
     is_active: BooleanField = BooleanField(default=False)
     created_by: ForeignKey = ForeignKey(to=User, null=True, on_delete=CASCADE)
     created_at: DateTimeField = DateTimeField(auto_now_add=True)
-    updated_at: DateTimeField = DateTimeField(auto_now_add=True)
+    updated_at: DateTimeField = DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
         return str(self.name)
@@ -106,7 +106,7 @@ class Group(Model):
     is_active: BooleanField = BooleanField(default=False)
     created_by: ForeignKey = ForeignKey(to=User, null=True, on_delete=CASCADE)
     created_at: DateTimeField = DateTimeField(auto_now_add=True)
-    updated_at: DateTimeField = DateTimeField(auto_now_add=True)
+    updated_at: DateTimeField = DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
         return str(self.name)
@@ -134,7 +134,7 @@ class SellerUser(Model):
     apartment_number: CharField = CharField(max_length=50, null=True)
     created_by: ForeignKey = ForeignKey(to=User, null=True, on_delete=CASCADE, related_name="sellers")
     created_at: DateTimeField = DateTimeField(auto_now_add=True)
-    updated_at: DateTimeField = DateTimeField(auto_now_add=True)
+    updated_at: DateTimeField = DateTimeField(auto_now=True)
 
 
 class BuyerUser(Model):
@@ -159,4 +159,4 @@ class BuyerUser(Model):
     apartment_number: CharField(max_length=50, null=True)
     created_by: ForeignKey = ForeignKey(to=User, null=True, on_delete=CASCADE, related_name="buyers")
     created_at: DateTimeField = DateTimeField(auto_now_add=True)
-    updated_at: DateTimeField = DateTimeField(auto_now_add=True)
+    updated_at: DateTimeField = DateTimeField(auto_now=True)
