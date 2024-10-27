@@ -88,8 +88,9 @@ def verify_otp_data(request, fake_number, user_factory):
 
     def invalid_otp_secret():
         return_data.update({
-            'status_code': 404,
-            'otp_secret': 'invalid_otp_secret'
+            'status_code': 400,
+            'otp_secret': 'invalid_otp_secret',
+            'check_otp_exception': ValidationError("Invalid OTP code.", 400)
         })
         return return_data
 
