@@ -1,14 +1,21 @@
+import os
+import sys
 from pathlib import Path
 
 from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "django-insecure-6+-l+d2fi3saztr*nqn#h214oi)!s98+bs%@0#d90ec4#g)69j"
+sys.path.append(os.path.join(BASE_DIR, 'apps'))
 
-DEBUG = True
+SECRET_KEY = config("SECRET_KEY", default="hjg^&%**%%^*GHVGJHGKJGKH", cast=str)
 
-ALLOWED_HOSTS = []
+DEBUG = config("DEBUG", default=False, cast=bool)
+
+if DEBUG:
+    ALLOWED_HOSTS = ["*"]
+else:
+    ALLOWED_HOSTS = ["*"]
 
 DJANGO_APPS = [
     "django.contrib.admin",
@@ -21,11 +28,13 @@ DJANGO_APPS = [
 
 EXTERNAL_APPS = [
     "rest_framework",
-    "rest_framework_simplejwt"
+    "rest_framework_simplejwt",
+    "drf_spectacular"
 ]
 
 LOCAL_APPS = [
-
+    "user",
+    "share"
 ]
 
 INSTALLED_APPS = DJANGO_APPS + EXTERNAL_APPS + LOCAL_APPS
@@ -77,17 +86,10 @@ DATABASES = {
 
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.BasicAuthentication',
-        'users.authentications.CustomJWTAuthentication',
-    ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
-    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 10,
 }
 
 # Password validation
@@ -127,6 +129,12 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+AUTHENTICATION_BACKENDS = [
+    "user.backends.CustomModelBackend"
+]
+
+AUTH_USER_MODEL = "user.User"
 
 # redis setup
 

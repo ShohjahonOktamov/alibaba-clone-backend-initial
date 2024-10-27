@@ -2,6 +2,7 @@ asgiref==3.8.1
 Django==4.2.14
 djangorestframework==3.15.2
 djangorestframework-simplejwt
+drf-spectacular
 factory-boy==3.3.0
 Faker==25.9.2
 fakeredis==2.23.3
