@@ -97,6 +97,7 @@ class Group(Model):
         db_table: str = "group"
         verbose_name: str = "Group"
         verbose_name_plural: str = "Groups"
+        ordering: list[str] = ["-created_at"]
 
     id: AutoField = AutoField(primary_key=True)
     name: CharField = CharField(max_length=255)
