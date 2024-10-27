@@ -72,6 +72,7 @@ class Policy(Model):
         db_table: str = "policy"
         verbose_name: str = "Policy"
         verbose_name_plural: str = "Policies"
+        ordering: list[str] = ["-created_at"]
 
     policy_choices = [
         ("admin_policy", "ADMIN_POLICY"),
@@ -115,7 +116,6 @@ class SellerUser(Model):
         db_table: str = "seller"
         verbose_name: str = "Seller users"
         verbose_name_plural: str = "Seller user"
-        ordering: list[str] = ["-created_at"]
 
     id: UUIDField = UUIDField(primary_key=True, default=uuid4)
     user: ForeignKey = ForeignKey(to=User, on_delete=CASCADE)
