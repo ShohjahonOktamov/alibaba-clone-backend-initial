@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
 from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
 from share.utils import generate_otp, send_email, redis_conn
@@ -14,7 +15,6 @@ if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractBaseUser
     from rest_framework.permissions import BasePermission
     from rest_framework.request import Request
-    from rest_framework.response import Response
 
 UserModel: "Type[AbstractBaseUser]" = get_user_model()
 
@@ -26,7 +26,7 @@ class SignUpView(APIView):
     permission_classes: "tuple[type[BasePermission]]" = AllowAny,
 
     @staticmethod
-    def post(request: "Request") -> "Response":
+    def post(request: "Request") -> Response:
         serializer: UserSerializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
