@@ -1,9 +1,10 @@
 from typing import TYPE_CHECKING
 
 from django.contrib.auth import get_user_model
+from django.utils.translation import gettext_lazy as _
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.status import HTTP_201_CREATED, HTTP_400_BAD_REQUEST
+from rest_framework.status import HTTP_201_CREATED, HTTP_409_CONFLICT
 from rest_framework.views import APIView
 from share.utils import generate_otp, send_email, redis_conn
 
@@ -28,23 +29,32 @@ class SignUpView(APIView):
     @staticmethod
     def post(request: "Request") -> Response:
         serializer: UserSerializer = UserSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
 
-            email: str = serializer.validated_data.get("email")
-            phone_number: str = serializer.validated_data.get("phone_number")
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
-            try:
-                otp_code, otp_secret = generate_otp(phone_number_or_email=phone_number, check_if_exists=False)
-                send_email(email=email, otp_code=otp_code)
-
-            except OTPException:
-                otp_secret: str = redis_conn.get(f"{email}:otp_secret").decode()
-
+        email: str = serializer.validated_data.get("email")
+        if UserModel.objects.filter(email=email, is_verified=True).exists():
             return Response(data={
-                "phone_number": phone_number,
-                "otp_secret": otp_secret},
-                status=HTTP_201_CREATED)
+                "detail": _("User with this email already exists!")},
+                status=HTTP_409_CONFLICT
+            )
 
-        return Response(data=serializer.errors,
-                        status=HTTP_400_BAD_REQUEST)
+        phone_number: str = serializer.validated_data.get("phone_number")
+        if UserModel.objects.filter(phone_number=phone_number, is_verified=True).exists():
+            return Response(data={
+                "detail": _("User with this phone number already exists!")},
+                status=HTTP_409_CONFLICT
+            )
+
+        try:
+            otp_code, otp_secret = generate_otp(phone_number_or_email=phone_number, check_if_exists=True)
+            send_email(email=email, otp_code=otp_code)
+
+        except OTPException:
+            otp_secret: str = redis_conn.get(f"{email}:otp_secret").decode()
+
+        return Response(data={
+            "phone_number": phone_number,
+            "otp_secret": otp_secret},
+            status=HTTP_201_CREATED)

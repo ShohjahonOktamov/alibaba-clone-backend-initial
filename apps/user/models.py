@@ -46,8 +46,8 @@ class User(AbstractBaseUser, PermissionsMixin, Model):
         ordering: list[str] = ["-created_at"]
 
     id = UUIDField(primary_key=True, default=uuid4)
-    phone_number = CharField(max_length=13, unique=True)
-    email = CharField(max_length=255, unique=True)
+    phone_number = CharField(max_length=13, null=True)
+    email = CharField(max_length=255, blank=True, null=True)
     password = CharField(max_length=255)
     first_name = CharField(max_length=255)
     last_name = CharField(max_length=255)
@@ -64,7 +64,10 @@ class User(AbstractBaseUser, PermissionsMixin, Model):
     created_at = DateTimeField(auto_now_add=True)
     updated_at = DateTimeField(auto_now=True)
 
-    USERNAME_FIELD: str = 'email'
+    USERNAME_FIELD: str = 'id'
+
+    def __str__(self) -> str:
+        return str(elf.phone_number)
 
 
 class Policy(Model):
