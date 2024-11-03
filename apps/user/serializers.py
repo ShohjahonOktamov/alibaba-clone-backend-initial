@@ -1,8 +1,10 @@
 from typing import TYPE_CHECKING
 
 from django.contrib.auth import get_user_model
-from rest_framework.serializers import ModelSerializer, ChoiceField, ValidationError, CharField
-
+from redis import Redis
+from rest_framework.exceptions import NotFound
+from rest_framework.serializers import ModelSerializer, ChoiceField, ValidationError, CharField, Serializer
+from django.conf import settings
 from .models import BuyerUser, SellerUser, Group, Policy
 
 if TYPE_CHECKING:
@@ -10,6 +12,8 @@ if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractBaseUser
 
 UserModel: "Type[AbstractBaseUser]" = get_user_model()
+
+redis_conn: Redis = Redis.from_url(settings.REDIS_URL)
 
 
 class UserSerializer(ModelSerializer):
@@ -70,3 +74,63 @@ class UserSerializer(ModelSerializer):
             return False
 
         return valid
+
+
+class VerifyCodeSerializer(Serializer):
+    phone_number = CharField(max_length=13)
+    otp_code = CharField(max_length=6)
+
+    def validate(self, data: dict[str, str]) -> dict[str, str] | None:
+        phone_number: str | None = data.get("phone_number")  # get the phone_number from data
+
+        # if the phone_number is not provided
+        if phone_number is None:
+            raise ValidationError(
+                detail={"message": "phone_number is required."},
+                code="phone_number_not_provided")
+
+        # if the phone_number field is empty
+        if phone_number == "" or phone_number.isspace():
+            raise ValidationError(
+                detail={"message": "phone_number can not be blank."},
+                code="empty_phone_number")
+
+        stored_hash: bytes | None = redis_conn.get(f"{phone_number}:otp")  # get the stored otp_hash from the redis
+        otp_secret: str | None = redis_conn.get(f"{phone_number}:otp_secret")
+
+        # if a user with such phone_number does not exist
+        if (not UserModel.objects.filter(phone_number=phone_number).exists() or
+                None in (stored_hash, otp_secret)
+        ):
+            raise ValidationError(
+                detail={"message": "Invalid phone_number."},
+                code="invalid_phone_number")
+
+        if UserModel.objects.filter(phone_number=phone_number, is_verified=True).exists():
+            raise NotFound(
+                detail="Unverified User not found.",
+                code="user_is_already_verified"
+            )
+
+        otp_code: str | None = data.get("otp_code")  # get the otp_code
+
+        # if the otp_code is not provided
+        if otp_code is None:
+            raise ValidationError(
+                detail={"message": "otp_code is required."},
+                code="otp_code_not_provided")
+
+        # if the otp_code field is empty
+        if otp_code == "" or otp_code.isspace():
+            raise ValidationError(
+                detail={"message": "otp_code can not be blank."},
+                code="empty_otp_code")
+
+        # if the length of the otp_code is not equal to 6 or if it does not fully consist of digits
+        if len(otp_code) != 6 or not otp_code.isdigit():
+            raise ValidationError(
+                detail={"message": "Invalid otp_code format."},
+                code="invalid_otp_code_format"
+            )
+
+        return data

@@ -1,15 +1,18 @@
 from typing import TYPE_CHECKING
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
+from redis import Redis
+from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.status import HTTP_201_CREATED, HTTP_409_CONFLICT
-from rest_framework.views import APIView
-from share.utils import generate_otp, send_email, redis_conn
+from rest_framework.status import HTTP_201_CREATED, HTTP_409_CONFLICT, HTTP_400_BAD_REQUEST
+from share.utils import generate_otp, send_email, redis_conn, check_otp
 
 from apps.share.exceptions import OTPException
-from .serializers import UserSerializer
+from .serializers import UserSerializer, VerifyCodeSerializer
+from .services import UserService
 
 if TYPE_CHECKING:
     from typing import Type
@@ -19,16 +22,17 @@ if TYPE_CHECKING:
 
 UserModel: "Type[AbstractBaseUser]" = get_user_model()
 
+redis_conn: Redis = Redis.from_url(settings.REDIS_URL)
+
 
 # Create your views here.
 
-class SignUpView(APIView):
+class SignUpView(GenericAPIView):
     serializer_class: "Type[UserSerializer]" = UserSerializer
     permission_classes: "tuple[type[BasePermission]]" = AllowAny,
 
-    @staticmethod
-    def post(request: "Request") -> Response:
-        serializer: UserSerializer = UserSerializer(data=request.data)
+    def post(self, request: "Request", *args, **kwargs) -> Response:
+        serializer: UserSerializer = self.get_serializer(data=request.data)
 
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -52,9 +56,45 @@ class SignUpView(APIView):
             send_email(email=email, otp_code=otp_code)
 
         except OTPException:
-            otp_secret: str = redis_conn.get(f"{email}:otp_secret").decode()
+            otp_secret: str = redis_conn.get(f"{phone_number}:otp_secret").decode()
 
         return Response(data={
             "phone_number": phone_number,
             "otp_secret": otp_secret},
             status=HTTP_201_CREATED)
+
+
+class VerifyView(GenericAPIView):
+    serializer_class: "Type[VerifyCodeSerializer]" = VerifyCodeSerializer
+    permission_classes: "tuple[type[BasePermission]]" = AllowAny,
+
+    def patch(self, request: "Request", *args, **kwargs) -> Response:
+        serializer: VerifyCodeSerializer = self.get_serializer(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+
+        data: dict[str, str] = serializer.validated_data
+
+        phone_number: str = data["phone_number"]
+        otp_code: str = data["otp_code"]
+        otp_secret: str = redis_conn.get(f"{phone_number}:otp_secret")
+
+        try:
+            check_otp(phone_number_or_email=phone_number, otp_code=otp_code, otp_secret=otp_secret)
+        except OTPException:
+            return Response(
+                data={"message": "Incorrect otp_code."},
+                status=HTTP_400_BAD_REQUEST)
+
+        user: UserModel = UserModel.objects.get(phone_number=phone_number)
+
+        user.is_verified = True
+        user.is_active = True
+        user.save()
+
+        tokens: dict[str, str] = UserService.create_tokens(user=user)
+
+        return Response(
+            data=tokens,
+            status=HTTP_201_CREATED
+        )

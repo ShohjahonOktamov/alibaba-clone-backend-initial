@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.mail.message import EmailMessage
@@ -79,3 +79,10 @@ def send_email(email: str, otp_code: str) -> None:
     )
     email.content_subtype = "html"
     email.send(fail_silently=False)
+
+
+def check_otp(phone_number_or_email: str, otp_code: str, otp_secret: str) -> None:
+    stored_hash: bytes = redis_conn.get(f"{phone_number_or_email}:otp")
+
+    if not check_password(password=f"{otp_secret}:{otp_code}", encoded=stored_hash.decode()):
+        raise OTPException(detail="Incorrect otp_code.")

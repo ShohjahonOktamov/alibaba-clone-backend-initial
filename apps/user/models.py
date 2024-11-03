@@ -67,7 +67,7 @@ class User(AbstractBaseUser, PermissionsMixin, Model):
     USERNAME_FIELD: str = 'id'
 
     def __str__(self) -> str:
-        return str(elf.phone_number)
+        return str(self.phone_number)
 
 
 class Policy(Model):
