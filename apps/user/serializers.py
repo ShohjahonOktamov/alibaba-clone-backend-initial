@@ -1,10 +1,11 @@
 from typing import TYPE_CHECKING
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from redis import Redis
 from rest_framework.exceptions import NotFound
 from rest_framework.serializers import ModelSerializer, ChoiceField, ValidationError, CharField, Serializer
-from django.conf import settings
+
 from .models import BuyerUser, SellerUser, Group, Policy
 
 if TYPE_CHECKING:
@@ -77,8 +78,8 @@ class UserSerializer(ModelSerializer):
 
 
 class VerifyCodeSerializer(Serializer):
-    phone_number = CharField(max_length=13)
-    otp_code = CharField(max_length=6)
+    phone_number = CharField(max_length=13, required=True)
+    otp_code = CharField(max_length=6, required=True)
 
     def validate(self, data: dict[str, str]) -> dict[str, str] | None:
         phone_number: str | None = data.get("phone_number")  # get the phone_number from data
@@ -89,18 +90,12 @@ class VerifyCodeSerializer(Serializer):
                 detail={"message": "phone_number is required."},
                 code="phone_number_not_provided")
 
-        # if the phone_number field is empty
-        if phone_number == "" or phone_number.isspace():
-            raise ValidationError(
-                detail={"message": "phone_number can not be blank."},
-                code="empty_phone_number")
-
         stored_hash: bytes | None = redis_conn.get(f"{phone_number}:otp")  # get the stored otp_hash from the redis
-        otp_secret: str | None = redis_conn.get(f"{phone_number}:otp_secret")
+        secret_token: bytes | None = redis_conn.get(f"{phone_number}:otp_secret")
 
         # if a user with such phone_number does not exist
         if (not UserModel.objects.filter(phone_number=phone_number).exists() or
-                None in (stored_hash, otp_secret)
+                None in (stored_hash, secret_token)
         ):
             raise ValidationError(
                 detail={"message": "Invalid phone_number."},
@@ -131,6 +126,24 @@ class VerifyCodeSerializer(Serializer):
             raise ValidationError(
                 detail={"message": "Invalid otp_code format."},
                 code="invalid_otp_code_format"
+            )
+
+        otp_secret: str | None = self.context.get("otp_secret")  # get the otp_secret
+
+        if otp_secret is None:
+            raise ValidationError(
+                detail={"message": "otp_secret is required."},
+                code="otp_secret_not_provided")
+
+        if otp_secret == "" or otp_secret.isspace():
+            raise ValidationError(
+                detail={"message": "otp_secret may not be blank."},
+                code="empty_otp_secret")
+
+        if otp_secret != secret_token.decode():
+            raise ValidationError(
+                detail={"message": "Invalid otp_secret."},
+                code="invalid_otp_secret"
             )
 
         return data

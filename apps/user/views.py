@@ -8,7 +8,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.status import HTTP_201_CREATED, HTTP_409_CONFLICT, HTTP_400_BAD_REQUEST
-from share.utils import generate_otp, send_email, redis_conn, check_otp
+from share.utils import generate_otp, redis_conn, check_otp, send_email
 
 from apps.share.exceptions import OTPException
 from .serializers import UserSerializer, VerifyCodeSerializer
@@ -54,7 +54,7 @@ class SignUpView(GenericAPIView):
         try:
             otp_code, otp_secret = generate_otp(phone_number_or_email=phone_number, check_if_exists=True)
             send_email(email=email, otp_code=otp_code)
-
+            # print(otp_code)
         except OTPException:
             otp_secret: str = redis_conn.get(f"{phone_number}:otp_secret").decode()
 
@@ -69,7 +69,8 @@ class VerifyView(GenericAPIView):
     permission_classes: "tuple[type[BasePermission]]" = AllowAny,
 
     def patch(self, request: "Request", *args, **kwargs) -> Response:
-        serializer: VerifyCodeSerializer = self.get_serializer(data=request.data)
+        serializer: VerifyCodeSerializer = self.get_serializer(
+            data=request.data, context={"otp_secret": kwargs.get("otp_secret")})
 
         serializer.is_valid(raise_exception=True)
 
@@ -77,7 +78,7 @@ class VerifyView(GenericAPIView):
 
         phone_number: str = data["phone_number"]
         otp_code: str = data["otp_code"]
-        otp_secret: str = redis_conn.get(f"{phone_number}:otp_secret")
+        otp_secret: str = redis_conn.get(f"{phone_number}:otp_secret").decode()
 
         try:
             check_otp(phone_number_or_email=phone_number, otp_code=otp_code, otp_secret=otp_secret)
