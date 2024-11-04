@@ -7,7 +7,7 @@ from redis import Redis
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.status import HTTP_201_CREATED, HTTP_409_CONFLICT, HTTP_400_BAD_REQUEST
+from rest_framework.status import HTTP_201_CREATED, HTTP_409_CONFLICT, HTTP_400_BAD_REQUEST, HTTP_200_OK
 from share.utils import generate_otp, redis_conn, check_otp, send_email
 
 from apps.share.exceptions import OTPException
@@ -87,7 +87,10 @@ class VerifyView(GenericAPIView):
                 data={"message": "Incorrect otp_code."},
                 status=HTTP_400_BAD_REQUEST)
 
-        user: UserModel = UserModel.objects.get(phone_number=phone_number)
+        redis_conn.delete(f"{phone_number}:otp")
+        redis_conn.delete(f"{phone_number}:otp_secret")
+
+        user: UserModel = UserModel.objects.filter(phone_number=phone_number).first()
 
         user.is_verified = True
         user.is_active = True
@@ -97,5 +100,5 @@ class VerifyView(GenericAPIView):
 
         return Response(
             data=tokens,
-            status=HTTP_201_CREATED
+            status=HTTP_200_OK
         )
