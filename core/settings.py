@@ -1,8 +1,9 @@
 import os
 import sys
+from datetime import datetime
 from datetime import timedelta
 from pathlib import Path
-from datetime import datetime
+
 from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -162,7 +163,13 @@ SESSION_ENGINE: str = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS: str = "default"
 
 # celery setup
+CELERY_BROKER_URL: str = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
 
+CELERY_RESULT_BACKEND: str = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
+
+CELERY_TIMEZONE: str = TIME_ZONE
+
+CELERY_TASKS_ALWAYS_EAGER: bool = False
 
 # stripe setup
 
