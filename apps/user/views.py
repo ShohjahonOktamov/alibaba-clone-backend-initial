@@ -8,7 +8,8 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.status import HTTP_201_CREATED, HTTP_409_CONFLICT, HTTP_400_BAD_REQUEST, HTTP_200_OK
-from share.utils import generate_otp, redis_conn, check_otp, send_email
+from share.utils import generate_otp, redis_conn, check_otp
+from .tasks import send_email
 
 from apps.share.exceptions import OTPException
 from .serializers import UserSerializer, VerifyCodeSerializer
@@ -53,7 +54,7 @@ class SignUpView(GenericAPIView):
 
         try:
             otp_code, otp_secret = generate_otp(phone_number_or_email=phone_number, check_if_exists=True)
-            send_email(email=email, otp_code=otp_code)
+            send_email.delay(email=email, otp_code=otp_code)
             # print(otp_code)
         except OTPException:
             otp_secret: str = redis_conn.get(f"{phone_number}:otp_secret").decode()

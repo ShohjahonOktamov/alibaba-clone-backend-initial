@@ -114,32 +114,32 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 
-STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "static"
+STATIC_URL: str = "static/"
+STATIC_ROOT: Path = BASE_DIR / "static"
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL: str = '/media/'
+MEDIA_ROOT: Path = BASE_DIR / "media"
 
 # Default primary key field type
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+DEFAULT_AUTO_FIELD: str = "django.db.models.BigAutoField"
 
-AUTHENTICATION_BACKENDS = [
+AUTHENTICATION_BACKENDS: list[str] = [
     "user.backends.CustomModelBackend"
 ]
 
-AUTH_USER_MODEL = "user.User"
+AUTH_USER_MODEL: str = "user.User"
 
-BIRTH_YEAR_MIN = 1900
-BIRTH_YEAR_MAX = datetime.now().year
+BIRTH_YEAR_MIN: int = 1900
+BIRTH_YEAR_MAX: int = datetime.now().year
 
 # email
 
-EMAIL_BACKEND = config('EMAIL_BACKEND', default='')
-EMAIL_HOST = config('EMAIL_HOST', default='')
-EMAIL_USE_TLS = config('EMAIL_USE_TLS', default='')
-EMAIL_PORT = config('EMAIL_PORT', default='')
-EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+EMAIL_BACKEND: str = config('EMAIL_BACKEND', default='', cast=str)
+EMAIL_HOST: str = config('EMAIL_HOST', default='', cast=str)
+EMAIL_USE_TLS: bool = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_PORT: str = config('EMAIL_PORT', default='', cast=str)
+EMAIL_HOST_USER: str = config('EMAIL_HOST_USER', default='', cast=str)
+EMAIL_HOST_PASSWORD: str = config('EMAIL_HOST_PASSWORD', default='', cast=str)
 
 # redis setup
 
