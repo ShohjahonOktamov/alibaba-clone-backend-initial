@@ -134,7 +134,7 @@ BIRTH_YEAR_MAX: int = datetime.now().year
 
 # email
 
-EMAIL_BACKEND: str = config('EMAIL_BACKEND', default='', cast=str)
+EMAIL_BACKEND: str = config('EMAIL_BACKEND', default="django.core.mail.backends.smtp.EmailBackend", cast=str)
 EMAIL_HOST: str = config('EMAIL_HOST', default='', cast=str)
 EMAIL_USE_TLS: bool = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_PORT: str = config('EMAIL_PORT', default='', cast=str)
