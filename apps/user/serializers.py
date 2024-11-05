@@ -1,17 +1,18 @@
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Type, Any, Literal
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from redis import Redis
 from rest_framework.exceptions import NotFound
-from rest_framework.serializers import ModelSerializer, ChoiceField, ValidationError, CharField, Serializer
+from rest_framework.serializers import ModelSerializer, ChoiceField, ValidationError, CharField, Serializer, \
+    SerializerMethodField
 
 from .models import BuyerUser, SellerUser, Group, Policy
 
 if TYPE_CHECKING:
-    from typing import Type, Any
     from django.contrib.auth.models import AbstractBaseUser
+    from django.db.models import QuerySet
 
 UserModel: "Type[AbstractBaseUser]" = get_user_model()
 
@@ -23,7 +24,7 @@ class UserSerializer(ModelSerializer):
     user_trade_role = ChoiceField(choices=("seller", "buyer"), required=True)
 
     class Meta:
-        model: "Type[UserModel]" = UserModel
+        model: Type[UserModel] = UserModel
         fields: tuple[
             str] = "id", "email", "phone_number", "password", "confirm_password", \
             "first_name", "last_name", "gender", "created_by", "user_trade_role"
@@ -153,3 +154,60 @@ class LoginSerializer(Serializer):
             return data
 
         raise ValidationError("Enter a valid phone number or email address.")
+
+
+class BuyerUserSerializer(ModelSerializer):
+    class Meta:
+        model: Type[BuyerUser] = BuyerUser
+        fields: tuple[
+            str] = "photo", "bio", "birth_date", "country", "city", "district", \
+            "street_address", "postal_code", "second_phone_number", "building_number", "apartment_number"
+
+
+class SellerUserSerializer(ModelSerializer):
+    class Meta:
+        model: Type[SellerUser] = SellerUser
+        fields: tuple[
+            str] = "company", "photo", "bio", "birth_date", "country", "city", "district", \
+            "street_address", "postal_code", "second_phone_number", "building_number", "apartment_number"
+
+
+class UsersMeSerializer(ModelSerializer):
+    user_trade_role = SerializerMethodField(method_name="get_user_trade_role")
+    trader_user = SerializerMethodField(method_name="get_trader_user")
+
+    class Meta:
+        model: Type[UserModel] = UserModel
+        fields: tuple[
+            str] = "id", "first_name", "last_name", "phone_number", "email", "gender", "user_trade_role", "trader_user"
+        extra_kwargs: dict[str:dict[str, bool]] = {
+            "id": {"read_only": True},
+            "user_trade_role": {"read_only": True}
+        }
+
+    def get_user_trade_role(self, instance: UserModel) -> Literal["buyer", "seller"] | None:
+        user_groups: "QuerySet[str]" = instance.groups.values_list("name", flat=True)
+        if "buyer" in user_groups:
+            return "buyer"
+        elif "seller" in user_groups:
+            return "seller"
+        return None
+
+    def get_trader_user(self, instance: UserModel) -> dict[str, Any | None] | None:
+        buyer_user: BuyerUser = BuyerUser.objects.filter(user=instance).first()
+        if buyer_user is not None:
+            return BuyerUserSerializer(instance=buyer_user).data
+
+        seller_user: SellerUser = SellerUser.objects.filter(user=instance).first()
+        if seller_user is not None:
+            return SellerUserSerializer(instance=seller_user).data
+
+        return None
+
+    def to_representation(self, instance: UserModel) -> dict[str, Any | None]:
+        representation: dict[str, Any | None] = super().to_representation(instance=instance)
+        representation.pop("user_trade_role", None)
+        trader_user_data: dict[str, Any | None] = representation.pop("trader_user", {})
+        representation.update(trader_user_data)
+
+        return representation

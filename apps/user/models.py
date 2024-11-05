@@ -1,12 +1,8 @@
-from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from django.contrib.auth.models import Permission, AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.db.models import Model, CharField, BooleanField, ManyToManyField, ForeignKey, DateTimeField, AutoField, \
-    UUIDField, CASCADE, BinaryField
-
-if TYPE_CHECKING:
-    pass
+    UUIDField, CASCADE, BinaryField, DateField
 
 
 # Create your models here.
@@ -46,13 +42,13 @@ class User(AbstractBaseUser, PermissionsMixin, Model):
         ordering: list[str] = ["-created_at"]
 
     id = UUIDField(primary_key=True, default=uuid4)
+    gender = CharField(max_length=10)
+    first_name = CharField(max_length=255)
+    last_name = CharField(max_length=255)
+    groups = ManyToManyField(blank=True, to="Group", related_name="custom_user_groups")
     phone_number = CharField(max_length=13, null=True)
     email = CharField(max_length=255, blank=True, null=True)
     password = CharField(max_length=255)
-    first_name = CharField(max_length=255)
-    last_name = CharField(max_length=255)
-    gender = CharField(max_length=10)
-    groups = ManyToManyField(blank=True, to="Group", related_name="custom_user_groups")
     policies = ManyToManyField(blank=True, to="Policy")
     user_permissions = ManyToManyField(to=Permission, related_name="custom_user_permissions", blank=True)
     is_verified = BooleanField(default=False)
@@ -124,9 +120,9 @@ class SellerUser(Model):
     id = UUIDField(primary_key=True, default=uuid4)
     user = ForeignKey(to=User, on_delete=CASCADE)
     company = CharField(max_length=50, null=True)
-    image = BinaryField(null=True)
+    photo = BinaryField(null=True)
     bio = CharField(max_length=255, null=True)
-    birth_date = DateTimeField(null=True)
+    birth_date = DateField(null=True)
     country = CharField(max_length=50, null=True)
     city = CharField(max_length=50, null=True)
     district = CharField(max_length=50, null=True)
@@ -149,9 +145,9 @@ class BuyerUser(Model):
 
     id: UUIDField = UUIDField(primary_key=True, default=uuid4)
     user: ForeignKey = ForeignKey(to=User, on_delete=CASCADE)
-    image: BinaryField = BinaryField(null=True)
+    photo: BinaryField = BinaryField(null=True)
     bio: CharField = CharField(max_length=255, null=True)
-    birth_date = DateTimeField(null=True)
+    birth_date = DateField(null=True)
     country = CharField(max_length=50, null=True)
     city = CharField(max_length=50, null=True)
     district = CharField(max_length=50, null=True)
