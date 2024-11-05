@@ -1,3 +1,4 @@
+import re
 from typing import TYPE_CHECKING
 
 from django.conf import settings
@@ -136,3 +137,19 @@ class VerifyCodeSerializer(Serializer):
             )
 
         return data
+
+
+class LoginSerializer(Serializer):
+    email_or_phone_number = CharField(required=True, min_length=6, max_length=255)
+    password = CharField(write_only=True, required=True)
+
+    def validate(self, data: dict[str, str]) -> dict[str, str]:
+        email_or_phone_number: str = data["email_or_phone_number"]
+
+        if re.match(pattern=r"[^@]+@[^@]+\.[^@]+", string=email_or_phone_number):
+            return data
+
+        if re.match(pattern=r"^\+?1?\d{6,13}$", string=email_or_phone_number):
+            return data
+
+        raise ValidationError("Enter a valid phone number or email address.")

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Type
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -9,17 +9,17 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.status import HTTP_201_CREATED, HTTP_409_CONFLICT, HTTP_400_BAD_REQUEST, HTTP_200_OK
 from share.utils import generate_otp, redis_conn, check_otp
-from .tasks import send_email
 
 from apps.share.exceptions import OTPException
-from .serializers import UserSerializer, VerifyCodeSerializer
+from .serializers import UserSerializer, VerifyCodeSerializer, LoginSerializer
 from .services import UserService
+from .tasks import send_email
 
 if TYPE_CHECKING:
-    from typing import Type
     from django.contrib.auth.models import AbstractBaseUser
     from rest_framework.permissions import BasePermission
     from rest_framework.request import Request
+    from django.db.models import QuerySet
 
 UserModel: "Type[AbstractBaseUser]" = get_user_model()
 
@@ -29,7 +29,7 @@ redis_conn: Redis = Redis.from_url(settings.REDIS_URL)
 # Create your views here.
 
 class SignUpView(GenericAPIView):
-    serializer_class: "Type[UserSerializer]" = UserSerializer
+    serializer_class: Type[UserSerializer] = UserSerializer
     permission_classes: "tuple[type[BasePermission]]" = AllowAny,
 
     def post(self, request: "Request", *args, **kwargs) -> Response:
@@ -66,7 +66,7 @@ class SignUpView(GenericAPIView):
 
 
 class VerifyView(GenericAPIView):
-    serializer_class: "Type[VerifyCodeSerializer]" = VerifyCodeSerializer
+    serializer_class: Type[VerifyCodeSerializer] = VerifyCodeSerializer
     permission_classes: "tuple[type[BasePermission]]" = AllowAny,
 
     def patch(self, request: "Request", *args, **kwargs) -> Response:
@@ -96,6 +96,30 @@ class VerifyView(GenericAPIView):
         user.is_verified = True
         user.is_active = True
         user.save()
+
+        tokens: dict[str, str] = UserService.create_tokens(user=user)
+
+        return Response(
+            data=tokens,
+            status=HTTP_200_OK
+        )
+
+
+class LoginView(GenericAPIView):
+    queryset: "QuerySet[UserModel]" = UserModel.objects.filter(is_verified=True, is_active=True)
+    serializer_class: Type[LoginSerializer] = LoginSerializer
+    permission_classes: "tuple[type[BasePermission]]" = AllowAny,
+
+    def post(self, request: "Request", *args, **kwargs) -> Response:
+        serializer: LoginSerializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        data: dict[str, str] = serializer.validated_data
+
+        user: UserModel = UserService.authenticate(
+            email_or_phone_number=data["email_or_phone_number"],
+            password=data["password"]
+        )
 
         tokens: dict[str, str] = UserService.create_tokens(user=user)
 

@@ -1,14 +1,16 @@
 import datetime
-from typing import TYPE_CHECKING, Type, Self
+from typing import TYPE_CHECKING, Type
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import check_password
+from django.db.models import Q
 from redis import Redis
 from rest_framework.serializers import ValidationError
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.db.models import Q
+
 from .enums import TokenType
-from django.contrib.auth.hashers import check_password
+
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractBaseUser
 
@@ -55,25 +57,24 @@ class TokenService:
 
 
 class UserService():
-
     @classmethod
     def authenticate(cls, email_or_phone_number: str, password: str,
                      quiet: bool = False) -> ValidationError | UserModel | None:
         try:
-            user:UserModel = UserModel.objects.get(
+            user: UserModel = UserModel.objects.filter(is_verified=True, is_active=True).get(
                 Q(email=email_or_phone_number) | Q(phone_number=email_or_phone_number)
             )
         except UserModel.DoesNotExist:
             if quiet:
                 return
             else:
-                raise ValidationError("User not found.")
+                raise ValidationError(detail="Foydalanuvchi email yoki paroli noto‘g‘ri.")
 
         if not check_password(password=password, encoded=user.password):
             if quiet:
                 return
             else:
-                raise ValidationError("Incorrect password.")
+                raise ValidationError(detail="Foydalanuvchi email yoki paroli noto‘g‘ri.")
 
         return user
 
