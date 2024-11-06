@@ -7,20 +7,20 @@ from redis import Redis
 from rest_framework.generics import GenericAPIView, RetrieveAPIView, UpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.status import HTTP_201_CREATED, HTTP_409_CONFLICT, HTTP_400_BAD_REQUEST, HTTP_200_OK, HTTP_403_FORBIDDEN
+from rest_framework.status import HTTP_201_CREATED, HTTP_409_CONFLICT, HTTP_400_BAD_REQUEST, HTTP_200_OK, \
+    HTTP_403_FORBIDDEN
 from share.permissions import GeneratePermissions
 from share.utils import generate_otp, redis_conn, check_otp
 
 from apps.share.exceptions import OTPException
 from .models import BuyerUser, SellerUser
 from .serializers import UserSerializer, VerifyCodeSerializer, LoginSerializer, UsersMeSerializer, BuyerUserSerializer, \
-    SellerUserSerializer
+    SellerUserSerializer, ChangePasswordSerializer
 from .services import UserService
 from .tasks import send_email
 
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractBaseUser
-    from rest_framework.permissions import BasePermission
     from rest_framework.request import Request
     from django.db.models import QuerySet
 
@@ -33,7 +33,7 @@ redis_conn: Redis = Redis.from_url(settings.REDIS_URL)
 
 class SignUpView(GenericAPIView):
     serializer_class: Type[UserSerializer] = UserSerializer
-    permission_classes: "tuple[type[BasePermission]]" = AllowAny,
+    permission_classes: tuple[type[AllowAny]] = AllowAny,
 
     def post(self, request: "Request", *args, **kwargs) -> Response:
         serializer: UserSerializer = self.get_serializer(data=request.data)
@@ -70,7 +70,7 @@ class SignUpView(GenericAPIView):
 
 class VerifyView(GenericAPIView):
     serializer_class: Type[VerifyCodeSerializer] = VerifyCodeSerializer
-    permission_classes: "tuple[type[BasePermission]]" = AllowAny,
+    permission_classes: tuple[type[AllowAny]] = AllowAny,
 
     def patch(self, request: "Request", *args, **kwargs) -> Response:
         serializer: VerifyCodeSerializer = self.get_serializer(
@@ -111,7 +111,7 @@ class VerifyView(GenericAPIView):
 class LoginView(GenericAPIView):
     queryset: "QuerySet[UserModel]" = UserModel.objects.filter(is_verified=True, is_active=True)
     serializer_class: Type[LoginSerializer] = LoginSerializer
-    permission_classes: "tuple[type[BasePermission]]" = AllowAny,
+    permission_classes: tuple[type[AllowAny]] = AllowAny,
 
     def post(self, request: "Request", *args, **kwargs) -> Response:
         serializer: LoginSerializer = self.get_serializer(data=request.data)
@@ -135,7 +135,7 @@ class LoginView(GenericAPIView):
 class UserMeView(GeneratePermissions, RetrieveAPIView, UpdateAPIView):
     queryset: "QuerySet[UserModel]" = UserModel.objects.all()
     serializer_class: Type[UsersMeSerializer] = UsersMeSerializer
-    permission_classes: "tuple[type[BasePermission]]" = IsAuthenticated,
+    permission_classes: tuple[type[IsAuthenticated]] = IsAuthenticated,
 
     def get_object(self) -> UserModel:
         return self.request.user
@@ -155,7 +155,7 @@ class UserMeView(GeneratePermissions, RetrieveAPIView, UpdateAPIView):
         if user_trade_role is None:
             return Response(status=HTTP_403_FORBIDDEN)
 
-        serializer: UsersMeSerializer = self.serializer_class(
+        serializer: UsersMeSerializer = self.get_serializer(
             instance=user,
             data=request.data,
             partial=True
@@ -184,3 +184,32 @@ class UserMeView(GeneratePermissions, RetrieveAPIView, UpdateAPIView):
             serializer.save()
 
         return Response(data=UsersMeSerializer(instance=self.get_object()).data)
+
+
+class ChangePasswordView(GenericAPIView):
+    serializer_class: Type[ChangePasswordSerializer] = ChangePasswordSerializer
+    permission_classes: tuple[type[IsAuthenticated]] = IsAuthenticated,
+
+    def put(self, request: "Request", *args, **kwargs) -> Response:
+        if not request.user.is_active:
+            return Response(
+                data={"detail": "User is inactive."},
+                status=HTTP_400_BAD_REQUEST
+            )
+
+        serializer: ChangePasswordSerializer = self.get_serializer(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+
+        user: UserModel = UserService.authenticate(email_or_phone_number=request.user.email,
+                                                   password=serializer.validated_data["old_password"])
+
+        user.set_password(raw_password=serializer.validated_data["new_password"])
+        user.save()
+
+        tokens: dict[str, str] = UserService.create_tokens(user=user)
+
+        return Response(
+            data=tokens,
+            status=HTTP_200_OK
+        )

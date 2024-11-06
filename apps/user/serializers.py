@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Type, Any, Literal
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 from redis import Redis
 from rest_framework.exceptions import NotFound
 from rest_framework.serializers import ModelSerializer, ChoiceField, ValidationError, CharField, Serializer, \
@@ -211,3 +212,26 @@ class UsersMeSerializer(ModelSerializer):
         representation.update(trader_user_data)
 
         return representation
+
+
+class ChangePasswordSerializer(Serializer):
+    old_password = CharField(required=True)
+    new_password = CharField(required=True)
+    confirm_password = CharField(required=True)
+
+    def validate(self, attrs: dict[str, str]) -> dict[str, str]:
+        if attrs["new_password"] != attrs["confirm_password"]:
+            raise ValidationError(
+                detail="The new password and the confirm passwords do not match.",
+                code="new_and_confirm_passwords_do_not_match"
+            )
+
+        if attrs["old_password"] == attrs["new_password"]:
+            raise ValidationError(
+                detail="The new password can not be the same as the old password.",
+                code="old_and_new_passwords_match"
+            )
+
+        validate_password(attrs["new_password"])
+
+        return attrs

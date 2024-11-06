@@ -68,13 +68,13 @@ class UserService():
             if quiet:
                 return
             else:
-                raise ValidationError(detail="Foydalanuvchi email yoki paroli noto‘g‘ri.")
+                raise ValidationError(detail="Invalid user credentials.", code="invalid_user_credentials")
 
         if not check_password(password=password, encoded=user.password):
             if quiet:
                 return
             else:
-                raise ValidationError(detail="Foydalanuvchi email yoki paroli noto‘g‘ri.")
+                raise ValidationError(detail="Invalid user credentials.", code="invalid_user_credentials")
 
         return user
 
