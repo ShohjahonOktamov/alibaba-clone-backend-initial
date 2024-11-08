@@ -61,6 +61,7 @@ def generate_otp(phone_number_or_email: str, expire_in: int = 120, check_if_exis
     otp_hash: str | bytes = make_password(password=f"{secret_token}:{otp_code}")
     key: str = f"{phone_number_or_email}:otp"
     redis_conn.set(name=key, value=otp_hash, ex=expire_in)
+    print(otp_code, secret_token)
     return otp_code, secret_token
 
 

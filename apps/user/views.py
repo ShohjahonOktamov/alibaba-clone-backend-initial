@@ -1,7 +1,9 @@
+from secrets import token_urlsafe
 from typing import TYPE_CHECKING, Type, Any, Literal
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, update_session_auth_hash
+from django.contrib.auth.hashers import make_password
 from django.utils.translation import gettext_lazy as _
 from redis import Redis
 from rest_framework.generics import GenericAPIView, RetrieveAPIView, UpdateAPIView
@@ -15,7 +17,8 @@ from share.utils import generate_otp, redis_conn, check_otp
 from apps.share.exceptions import OTPException
 from .models import BuyerUser, SellerUser
 from .serializers import UserSerializer, VerifyCodeSerializer, LoginSerializer, UsersMeSerializer, BuyerUserSerializer, \
-    SellerUserSerializer, ChangePasswordSerializer
+    SellerUserSerializer, ChangePasswordSerializer, ForgotPasswordSerializer, ForgotPasswordVerifySerializer, \
+    ResetPasswordSerializer
 from .services import UserService
 from .tasks import send_email
 
@@ -56,9 +59,8 @@ class SignUpView(GenericAPIView):
             )
 
         try:
-            otp_code, otp_secret = generate_otp(phone_number_or_email=phone_number, check_if_exists=True)
+            otp_code, otp_secret = generate_otp(phone_number_or_email=phone_number)
             send_email.delay(email=email, otp_code=otp_code)
-            # print(otp_code)
         except OTPException:
             otp_secret: str = redis_conn.get(f"{phone_number}:otp_secret").decode()
 
@@ -206,6 +208,7 @@ class ChangePasswordView(GenericAPIView):
 
         user.set_password(raw_password=serializer.validated_data["new_password"])
         user.save()
+        update_session_auth_hash(request=request, user=user)
 
         tokens: dict[str, str] = UserService.create_tokens(user=user)
 
@@ -213,3 +216,93 @@ class ChangePasswordView(GenericAPIView):
             data=tokens,
             status=HTTP_200_OK
         )
+
+
+class ForgotPasswordView(GenericAPIView):
+    permission_classes: tuple[Type[AllowAny]] = AllowAny,
+    serializer_class: Type[ForgotPasswordSerializer] = ForgotPasswordSerializer
+
+    def post(self, request: "Request", *args, **kwargs) -> Response:
+        serializer: ForgotPasswordSerializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email: str = serializer.validated_data["email"]
+
+        try:
+            otp_code, otp_secret = generate_otp(phone_number_or_email=email)
+            result: Literal[200, 400] = send_email(email=email, otp_code=otp_code)
+            if result == 400:
+                redis_conn.delete(f"{email}:otp")
+                return Response(data={"detail": "Failed to send OTP Code"}, status=HTTP_400_BAD_REQUEST)
+        except:
+            otp_secret: str = redis_conn.get(f"{email}:otp_secret").decode()
+
+        return Response(data={
+            "email": email,
+            "otp_secret": otp_secret
+        })
+
+
+class ForgotPasswordVerifyView(GenericAPIView):
+    permission_classes: tuple[Type[AllowAny]] = AllowAny,
+    serializer_class: Type[ForgotPasswordVerifySerializer] = ForgotPasswordVerifySerializer
+
+    def post(self, request: "Request", *args, **kwargs) -> Response:
+        serializer = self.get_serializer(
+            data=request.data,
+            context={"otp_secret": kwargs.get("otp_secret")})
+
+        serializer.is_valid(raise_exception=True)
+
+        email: str = serializer.validated_data["email"]
+        otp_code: str = serializer.validated_data["otp_code"]
+        otp_secret: str = serializer.validated_data["otp_secret"]
+
+        try:
+            check_otp(phone_number_or_email=email, otp_code=otp_code, otp_secret=otp_secret)
+        except OTPException:
+            return Response(
+                data={"message": "Incorrect otp_code."},
+                status=HTTP_400_BAD_REQUEST)
+
+        redis_conn.delete(f"{email}:otp")
+        redis_conn.delete(f"{email}:otp_secret")
+
+        token_hash: str = make_password(password=token_urlsafe())
+        redis_conn.set(token_hash, email, ex=2 * 60 * 60)
+
+        return Response(data={"token": token_hash}, status=HTTP_200_OK)
+
+
+class ResetPasswordView(GenericAPIView):
+    permission_classes: tuple[Type[AllowAny]] = AllowAny,
+    serializer_class: Type[ResetPasswordSerializer] = ResetPasswordSerializer
+
+    def patch(self, request: "Request", *args, **kwargs) -> Response:
+        serializer: ResetPasswordSerializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        token_hash: str = serializer.validated_data["token"]
+        email: bytes = redis_conn.get(name=token_hash)
+        if email is None:
+            return Response(data={"detail": "Invalid Token."}, status=HTTP_400_BAD_REQUEST)
+        queryset: "QuerySet[UserModel]" = UserModel.objects.filter(email=email.decode(), is_verified=True)
+        if not queryset.exists():
+            return Response(data={"detail": "Email not found."}, status=HTTP_400_BAD_REQUEST)
+
+        user: UserModel | None = queryset.filter(is_active=True).first()
+
+        if user is None:
+            return Response(data={"detail": "Active user with such email not found."}, status=HTTP_400_BAD_REQUEST)
+
+        password: str = serializer.validated_data["password"]
+
+        if user.check_password(raw_password=password):
+            return Response(data={"detail": "The new password can not be the same as the old password."},
+                            status=HTTP_400_BAD_REQUEST)
+
+        user.set_password(raw_password=password)
+        user.save()
+
+        update_session_auth_hash(request=request, user=user)
+        tokens: dict[str, str] = UserService.create_tokens(user=user)
+        redis_conn.delete(token_hash)
+        return Response(data=tokens, status=HTTP_200_OK)

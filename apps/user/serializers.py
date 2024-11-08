@@ -7,7 +7,7 @@ from django.contrib.auth.password_validation import validate_password
 from redis import Redis
 from rest_framework.exceptions import NotFound
 from rest_framework.serializers import ModelSerializer, ChoiceField, ValidationError, CharField, Serializer, \
-    SerializerMethodField
+    SerializerMethodField, EmailField
 
 from .models import BuyerUser, SellerUser, Group, Policy
 
@@ -233,5 +233,66 @@ class ChangePasswordSerializer(Serializer):
             )
 
         validate_password(attrs["new_password"])
+
+        return attrs
+
+
+class ForgotPasswordSerializer(Serializer):
+    email = EmailField(required=True, max_length=255)
+
+    def validate_email(self, value: str) -> str:
+        queryset: "QuerySet[UserModel]" = UserModel.objects.filter(email=value, is_verified=True)
+        if not queryset.exists():
+            raise ValidationError(detail="Email not found.")
+
+        if not queryset.filter(is_active=True).exists():
+            raise ValidationError(detail="Active user with such email not found.")
+
+        return value
+
+
+class ForgotPasswordVerifySerializer(Serializer):
+    email = EmailField(required=True, max_length=255)
+    otp_code = CharField(required=True, min_length=6, max_length=6)
+
+    def validate_email(self, value: str) -> str:
+        queryset: "QuerySet[UserModel]" = UserModel.objects.filter(email=value, is_verified=True)
+        if not queryset.exists():
+            raise ValidationError(detail="Email not found.")
+
+        if not queryset.filter(is_active=True).exists():
+            raise ValidationError(detail="Active user with such email not found.")
+
+        return value
+
+    def validate(self, attrs: dict[str, str]) -> dict[str, str]:
+        otp_secret: str | None = self.context.get("otp_secret")
+
+        if otp_secret is None:
+            raise ValidationError(
+                detail={"message": "otp_secret is required."},
+                code="otp_secret_not_provided")
+
+        if otp_secret == "" or otp_secret.isspace():
+            raise NotFound(
+                detail={"message": "otp_secret may not be blank."},
+                code="empty_otp_secret")
+
+        return attrs | {"otp_secret": otp_secret}
+
+
+class ResetPasswordSerializer(Serializer):
+    token = CharField(required=True)
+    password = CharField(required=True, min_length=8, write_only=True)
+    confirm_password = CharField(required=True, min_length=8, write_only=True)
+
+    def validate(self, attrs: dict[str, str]) -> dict[str, str]:
+        if attrs["password"] != attrs["confirm_password"]:
+            raise ValidationError(
+                detail="The new password and the confirm passwords do not match.",
+                code="passwords_missmatch"
+            )
+
+        validate_password(attrs["password"])
 
         return attrs

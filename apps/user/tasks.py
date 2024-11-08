@@ -43,6 +43,6 @@ def send_email(email: str, otp_code: str) -> Literal[200, 400]:
     except OSError:
         logging.error(msg="Network Error: ", exc_info=True)
         return 400
-    except:
-        logging.error(msg="An Error occurred: ", exc_info=True)
-        return 400
+    # except:
+    #     logging.error(msg="An Error occurred: ", exc_info=True)
+    #     return 400

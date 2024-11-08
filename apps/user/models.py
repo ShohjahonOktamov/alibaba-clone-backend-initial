@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from django.contrib.auth.models import Permission, AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.db.models import Model, CharField, BooleanField, ManyToManyField, ForeignKey, DateTimeField, AutoField, \
-    UUIDField, CASCADE, BinaryField, DateField
+    UUIDField, CASCADE, BinaryField, DateField, EmailField
 
 
 # Create your models here.
@@ -47,7 +47,7 @@ class User(AbstractBaseUser, PermissionsMixin, Model):
     last_name = CharField(max_length=255)
     groups = ManyToManyField(blank=True, to="Group", related_name="custom_user_groups")
     phone_number = CharField(max_length=13, null=True)
-    email = CharField(max_length=255, blank=True, null=True)
+    email = EmailField(max_length=255, blank=True, null=True)
     password = CharField(max_length=255)
     policies = ManyToManyField(blank=True, to="Policy")
     user_permissions = ManyToManyField(to=Permission, related_name="custom_user_permissions", blank=True)
