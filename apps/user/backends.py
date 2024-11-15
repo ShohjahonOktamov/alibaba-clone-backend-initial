@@ -11,13 +11,14 @@ from .enums import TokenType
 if TYPE_CHECKING:
     from typing import Type
     from django.contrib.auth.models import AbstractUser
+    from rest_framework.request import Request
 
 UserModel: "Type[AbstractUser]" = get_user_model()
 
 
 class CustomJWTAuthentication(JWTAuthentication):
-    def authenticate(self, request) -> tuple[AuthUser, Token] | None:
-        header: bytes | None = self.get_header(request)
+    def authenticate(self, request: "Request") -> tuple[AuthUser, Token] | None:
+        header: bytes | None = self.get_header(request=request)
         if header is None:
             return
 
@@ -26,14 +27,14 @@ class CustomJWTAuthentication(JWTAuthentication):
             return
 
         user, access_token = super().authenticate(request=request)
-        if not self.is_valid_access_token(user, access_token):
+        if not self.is_valid_access_token(user=user, access_token=access_token):
             raise AuthenticationFailed("Invalid Access Token")
 
         return user, access_token
 
     @classmethod
     def is_valid_access_token(cls, user: UserModel, access_token: Token) -> bool | None:
-        valid_access_tokens: set[str] = TokenService.get_valid_tokens(user.id, TokenType.ACCESS)
-        if valid_access_tokens and str(access_token).encode() not in valid_access_tokens:
+        valid_access_tokens: set[str] = TokenService.get_valid_tokens(user_id=user.id, token_type=TokenType.ACCESS)
+        if valid_access_tokens and str(object=access_token).encode() not in valid_access_tokens:
             raise AuthenticationFailed(detail="Invalid User credentials")
         return True

@@ -1,11 +1,12 @@
 import datetime
 from typing import TYPE_CHECKING, Type
+from uuid import UUID
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from redis import Redis
 from user.enums import TokenType
-from uuid import UUID
+
 if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractBaseUser
 
@@ -30,7 +31,7 @@ class TokenService:
             user_id: UUID,
             token: str,
             token_type: TokenType,
-            lifetime: datetime.timedelta,
+            expire_time: datetime.timedelta,
     ) -> None:
         redis_client: Redis = cls.get_redis_client()
 
@@ -40,7 +41,7 @@ class TokenService:
         if valid_tokens is not None:
             cls.delete_tokens(user_id=user_id, token_type=token_type)
         redis_client.sadd(token_key, token)
-        redis_client.expire(name=token_key, time=lifetime)
+        redis_client.expire(name=token_key, time=expire_time)
 
     @classmethod
     def delete_tokens(cls, user_id: int, token_type: TokenType) -> None:
