@@ -1,7 +1,7 @@
 from django.urls import path, include
 
 from .views import SignUpView, VerifyView, LoginView, UserMeView, ChangePasswordView, ForgotPasswordView, \
-    ForgotPasswordVerifyView, ResetPasswordView
+    ForgotPasswordVerifyView, ResetPasswordView, LogoutView
 
 urlpatterns = [
     path("register/", include([
@@ -18,5 +18,6 @@ urlpatterns = [
         ])),
         path("reset/", ResetPasswordView.as_view())
     ]
-    ))
+    )),
+    path("logout/", LogoutView.as_view())
 ]

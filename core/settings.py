@@ -124,7 +124,7 @@ MEDIA_ROOT: Path = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD: str = "django.db.models.BigAutoField"
 
 AUTHENTICATION_BACKENDS: list[str] = [
-    "user.backends.CustomModelBackend"
+    "user.backends.CustomJWTAuthentication"
 ]
 
 AUTH_USER_MODEL: str = "user.User"
@@ -144,8 +144,8 @@ EMAIL_HOST_PASSWORD: str = config('EMAIL_HOST_PASSWORD', default='*', cast=str)
 # redis setup
 
 REDIS_HOST: str = config("REDIS_HOST", default="localhost", cast=str)
-REDIS_PORT: str = config("REDIS_PORT", default="6379", cast=str)
-REDIS_DB: str = config("REDIS_DB", default='1', cast=str)
+REDIS_PORT: str = config("REDIS_PORT", default=6379, cast=int)
+REDIS_DB: str = config("REDIS_DB", default=0, cast=int)
 
 REDIS_URL: str = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
 
@@ -178,7 +178,7 @@ CELERY_TASKS_ALWAYS_EAGER: bool = False
 REST_FRAMEWORK: dict[str, list[str] | str | int] = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.BasicAuthentication',
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'user.backends.CustomJWTAuthentication'
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',

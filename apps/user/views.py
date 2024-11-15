@@ -60,7 +60,8 @@ class SignUpView(GenericAPIView):
 
         try:
             otp_code, otp_secret = generate_otp(phone_number_or_email=phone_number)
-            send_email.delay(email=email, otp_code=otp_code)
+            print(otp_code)
+            # send_email.delay(email=email, otp_code=otp_code)
         except OTPException:
             otp_secret: str = redis_conn.get(f"{phone_number}:otp_secret").decode()
 
@@ -306,3 +307,16 @@ class ResetPasswordView(GenericAPIView):
         tokens: dict[str, str] = UserService.create_tokens(user=user)
         redis_conn.delete(token_hash)
         return Response(data=tokens, status=HTTP_200_OK)
+
+
+class LogoutView(GenericAPIView):
+    permission_classes: tuple[type[IsAuthenticated]] = IsAuthenticated,
+
+    @staticmethod
+    def post(request: "Request", *args, **kwargs) -> Response:
+        UserService.create_tokens(user=request.user, access='fake_token', refresh='fake_token')
+
+        return Response(
+            data={"detail": "Successfully logged out."},
+            status=HTTP_200_OK
+        )
