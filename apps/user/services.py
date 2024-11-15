@@ -40,7 +40,7 @@ class UserService():
 
     @classmethod
     def create_tokens(cls, user: UserModel, access: str | bytes | None = None, refresh: str | bytes | None = None) -> \
-    dict[str, str]:
+            dict[str, str]:
         if None in (access, refresh):
             refresh: RefreshToken = RefreshToken.for_user(user)
             access: str = str(getattr(refresh, "access_token"))
@@ -50,14 +50,14 @@ class UserService():
             user_id=user.id,
             token=access,
             token_type=TokenType.ACCESS,
-            lifetime=settings.SIMPLE_JWT.get("ACCESS_TOKEN_LIFETIME"),
+            expire_time=settings.SIMPLE_JWT.get("ACCESS_TOKEN_LIFETIME"),
         )
 
         TokenService.add_token_to_redis(
             user_id=user.id,
             token=refresh,
             token_type=TokenType.REFRESH,
-            lifetime=settings.SIMPLE_JWT.get("REFRESH_TOKEN_LIFETIME"),
+            expire_time=settings.SIMPLE_JWT.get("REFRESH_TOKEN_LIFETIME"),
         )
 
         return {"access": access, "refresh": refresh}
