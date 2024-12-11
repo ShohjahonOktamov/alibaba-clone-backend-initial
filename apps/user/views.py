@@ -65,10 +65,13 @@ class SignUpView(GenericAPIView):
         except OTPException:
             otp_secret: str = redis_conn.get(f"{phone_number}:otp_secret").decode()
 
-        return Response(data={
-            "phone_number": phone_number,
-            "otp_secret": otp_secret},
-            status=HTTP_201_CREATED)
+        return Response(
+            data={
+                "phone_number": phone_number,
+                "otp_secret": otp_secret
+            },
+            status=HTTP_201_CREATED
+        )
 
 
 class VerifyView(GenericAPIView):
@@ -85,7 +88,8 @@ class VerifyView(GenericAPIView):
 
         phone_number: str = data["phone_number"]
         otp_code: str = data["otp_code"]
-        otp_secret: str = redis_conn.get(f"{phone_number}:otp_secret").decode()
+
+        otp_secret: str = data["otp_secret"]
 
         try:
             check_otp(phone_number_or_email=phone_number, otp_code=otp_code, otp_secret=otp_secret)

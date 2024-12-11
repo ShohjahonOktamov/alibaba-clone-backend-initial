@@ -37,7 +37,8 @@ EXTERNAL_APPS = [
 
 LOCAL_APPS = [
     "user",
-    "share"
+    "share",
+    "product"
 ]
 
 INSTALLED_APPS = DJANGO_APPS + EXTERNAL_APPS + LOCAL_APPS

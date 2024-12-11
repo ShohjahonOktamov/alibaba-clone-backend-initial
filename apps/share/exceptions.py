@@ -10,5 +10,5 @@ if TYPE_CHECKING:
 
 class OTPException(APIException):
     status_code: int = HTTP_400_BAD_REQUEST
-    default_detail: "lazy" = _("OTP verification failed.")
+    default_detail: str = "OTP verification failed."
     default_code: str = "otp_failed"

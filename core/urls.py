@@ -26,6 +26,7 @@ urlpatterns = [
     path("", lambda request: JsonResponse(data={'detail': 'Healthy'}), name='health'),
     path("api/", include([
         path("users/", include("user.urls")),
+        path("products/", include("product.urls")),
         path("schema/",
              SpectacularAPIView.as_view(),
              name="schema"
