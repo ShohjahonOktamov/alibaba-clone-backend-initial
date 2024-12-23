@@ -97,7 +97,7 @@ def verify_otp_data(request, fake_number, user_factory):
     def empty_otp_secret():
         return_data.update({
             'status_code': 404,
-            'otp_secret': ' '
+            'otp_secret': ''
         })
         return return_data
 

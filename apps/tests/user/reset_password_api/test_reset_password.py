@@ -1,7 +1,8 @@
 import pytest
 from django.contrib.auth.hashers import check_password
-from rest_framework.exceptions import ValidationError
 from user.models import User, Group
+
+from rest_framework.exceptions import ValidationError
 
 
 @pytest.fixture()
@@ -348,7 +349,6 @@ def test_reset_password(reset_password_data, api_client, mocker):
         '/api/users/password/reset/',
         data=return_data['req_json'], format='json'
     )
-    print(resp.json())
     assert resp.status_code == return_data['status_code']
 
     if resp.status_code == 200:
