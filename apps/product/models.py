@@ -35,20 +35,20 @@ class Size(Model):
 
 class Product(Model):
     id = UUIDField(primary_key=True, default=uuid4())
-    seller = ForeignKey(to="User")
+    seller = ForeignKey(to="user.User", on_delete=CASCADE)
     name = CharField(max_length=255)
     description = TextField(null=True)
     colors = ManyToManyField(to=Color, blank=True)
     sizes = ManyToManyField(to=Size, blank=True)
     price = DecimalField(max_digits=10, decimal_places=2)
     quantity = IntegerField(default=0)
-    category_id = ForeignKey(to=Category)
+    category_id = ForeignKey(to=Category, on_delete=CASCADE)
     created_at = DateField(auto_now_add=True)
     updated_at = DateField(auto_now=True)
 
 
 class Image(Model):
     id = UUIDField(primary_key=True, default=uuid4())
-    product_id = ForeignKey(to=Product)
+    product_id = ForeignKey(to=Product, on_delete=CASCADE)
     image = BinaryField()
     created_at = DateField(auto_now_add=True)

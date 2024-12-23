@@ -5,7 +5,10 @@ from django.conf import settings
 from django.contrib.auth import get_user_model, update_session_auth_hash
 from django.contrib.auth.hashers import make_password
 from django.utils.translation import gettext_lazy as _
+from drf_spectacular.openapi import OpenApiAuthenticationExtension
+from drf_spectacular.utils import extend_schema_view, extend_schema
 from redis import Redis
+from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView, RetrieveAPIView, UpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -15,6 +18,7 @@ from share.permissions import GeneratePermissions
 from share.utils import generate_otp, redis_conn, check_otp
 
 from apps.share.exceptions import OTPException
+from .backends import CustomJWTAuthentication
 from .models import BuyerUser, SellerUser
 from .serializers import UserSerializer, VerifyCodeSerializer, LoginSerializer, UsersMeSerializer, BuyerUserSerializer, \
     SellerUserSerializer, ChangePasswordSerializer, ForgotPasswordSerializer, ForgotPasswordVerifySerializer, \
@@ -26,6 +30,21 @@ if TYPE_CHECKING:
     from django.contrib.auth.models import AbstractBaseUser
     from rest_framework.request import Request
     from django.db.models import QuerySet
+    from drf_spectacular.openapi import AutoSchema
+
+
+class MyAuthenticationScheme(OpenApiAuthenticationExtension):
+    target_class: Type[CustomJWTAuthentication] = CustomJWTAuthentication
+    name: str = "JWTAuthentication"
+
+    def get_security_definition(self, auto_schema: "AutoSchema") -> dict[str, str]:
+        return {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+            "description": "Value should be formatted as: `Bearer ${access_token}`",
+        }
+
 
 UserModel: "Type[AbstractBaseUser]" = get_user_model()
 
@@ -34,6 +53,7 @@ redis_conn: Redis = Redis.from_url(settings.REDIS_URL)
 
 # Create your views here.
 
+@extend_schema_view(post=extend_schema(tags=["Users and Auth Management API"], operation_id="1_register_user"))
 class SignUpView(GenericAPIView):
     serializer_class: Type[UserSerializer] = UserSerializer
     permission_classes: tuple[type[AllowAny]] = AllowAny,
@@ -74,6 +94,7 @@ class SignUpView(GenericAPIView):
         )
 
 
+@extend_schema_view(patch=extend_schema(tags=["Users and Auth Management API"], operation_id="2_verify_user"))
 class VerifyView(GenericAPIView):
     serializer_class: Type[VerifyCodeSerializer] = VerifyCodeSerializer
     permission_classes: tuple[type[AllowAny]] = AllowAny,
@@ -89,7 +110,7 @@ class VerifyView(GenericAPIView):
         phone_number: str = data["phone_number"]
         otp_code: str = data["otp_code"]
 
-        otp_secret: str = data["otp_secret"]
+        otp_secret: str = redis_conn.get(f"{phone_number}:otp_secret").decode()
 
         try:
             check_otp(phone_number_or_email=phone_number, otp_code=otp_code, otp_secret=otp_secret)
@@ -115,6 +136,7 @@ class VerifyView(GenericAPIView):
         )
 
 
+@extend_schema_view(post=extend_schema(tags=["Users and Auth Management API"], operation_id="3_login_user"))
 class LoginView(GenericAPIView):
     queryset: "QuerySet[UserModel]" = UserModel.objects.filter(is_verified=True, is_active=True)
     serializer_class: Type[LoginSerializer] = LoginSerializer
@@ -147,6 +169,7 @@ class UserMeView(GeneratePermissions, RetrieveAPIView, UpdateAPIView):
     def get_object(self) -> UserModel:
         return self.request.user
 
+    @extend_schema(tags=["Users and Auth Management API"], operation_id="5_get_current_user")
     def get(self, request: "Request", *args, **kwargs) -> Response:
         user: UserModel = self.get_object()
         serializer: UsersMeSerializer = UsersMeSerializer(instance=self.get_object())
@@ -155,6 +178,7 @@ class UserMeView(GeneratePermissions, RetrieveAPIView, UpdateAPIView):
 
         return Response(data=serializer.data)
 
+    @extend_schema(tags=["Users and Auth Management API"], operation_id="6_update_current_user")
     def patch(self, request: "Request", *args, **kwargs) -> Response:
         user: UserModel = self.get_object()
         serializer: UsersMeSerializer = UsersMeSerializer(instance=self.get_object())
@@ -193,6 +217,7 @@ class UserMeView(GeneratePermissions, RetrieveAPIView, UpdateAPIView):
         return Response(data=UsersMeSerializer(instance=self.get_object()).data)
 
 
+@extend_schema_view(put=extend_schema(tags=["Users and Auth Management API"], operation_id="7_change_user_password"))
 class ChangePasswordView(GenericAPIView):
     serializer_class: Type[ChangePasswordSerializer] = ChangePasswordSerializer
     permission_classes: tuple[type[IsAuthenticated]] = IsAuthenticated,
@@ -223,6 +248,8 @@ class ChangePasswordView(GenericAPIView):
         )
 
 
+@extend_schema_view(
+    post=extend_schema(tags=["Users and Auth Management API"], operation_id="8_verify_user_password_change"))
 class ForgotPasswordView(GenericAPIView):
     permission_classes: tuple[Type[AllowAny]] = AllowAny,
     serializer_class: Type[ForgotPasswordSerializer] = ForgotPasswordSerializer
@@ -247,6 +274,7 @@ class ForgotPasswordView(GenericAPIView):
         })
 
 
+@extend_schema_view(post=extend_schema(tags=["Users and Auth Management API"], operation_id="9_set_user_password"))
 class ForgotPasswordVerifyView(GenericAPIView):
     permission_classes: tuple[Type[AllowAny]] = AllowAny,
     serializer_class: Type[ForgotPasswordVerifySerializer] = ForgotPasswordVerifySerializer
@@ -278,6 +306,7 @@ class ForgotPasswordVerifyView(GenericAPIView):
         return Response(data={"token": token_hash}, status=HTTP_200_OK)
 
 
+@extend_schema_view(patch=extend_schema(tags=["Users and Auth Management API"], operation_id="10_reset_user_password"))
 class ResetPasswordView(GenericAPIView):
     permission_classes: tuple[Type[AllowAny]] = AllowAny,
     serializer_class: Type[ResetPasswordSerializer] = ResetPasswordSerializer
@@ -313,7 +342,8 @@ class ResetPasswordView(GenericAPIView):
         return Response(data=tokens, status=HTTP_200_OK)
 
 
-class LogoutView(GenericAPIView):
+@extend_schema_view(post=extend_schema(tags=["Users and Auth Management API"], operation_id="4_logout_user"))
+class LogoutView(APIView):
     permission_classes: tuple[type[IsAuthenticated]] = IsAuthenticated,
 
     @staticmethod

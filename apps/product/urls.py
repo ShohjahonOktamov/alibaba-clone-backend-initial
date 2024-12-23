@@ -1,8 +1,12 @@
-from django.urls import path
+from django.urls import path, include
 
-from .views import GetCategoryView
+from .views import RetrieveCategoryView, ListCategoriesView
 
 urlpatterns = [
-    path("categories/", GetCategoryView.as_view()),
-    path("categories/<uuid:id>/", GetCategoryView.as_view())
+    path("categories/", include(
+        [
+            path('', ListCategoriesView.as_view()),
+            path("<uuid:pk>/", RetrieveCategoryView.as_view())
+        ]
+    ))
 ]

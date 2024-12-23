@@ -12,12 +12,13 @@ if TYPE_CHECKING:
 class CategoryFilter(FilterSet):
     class Meta:
         model: Type[Category] = Category
-        include: tuple[str] = "name",
+        fields: list[str] = ["search"]
 
-    search = CharFilter(method="filter_search")
+    search = CharFilter(method="filter_search", label="search")
 
-    def filter_search(self, queryset: "QuerySet[Category]", name: str, value: str) -> "QuerySet[Category]":
+    @staticmethod
+    def filter_search(queryset: "QuerySet[Category]", name: str, value: str) -> "QuerySet[Category]":
         return queryset.filter(
-            Q(name_icontains=value) |
-            Q(parent_name_icontains=value)
+            Q(name__icontains=value) |
+            Q(parent__name__icontains=value)
         ).distinct()

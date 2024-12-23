@@ -32,6 +32,7 @@ EXTERNAL_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "drf_spectacular",
+    "django_filters",
     "django_redis"
 ]
 
@@ -176,20 +177,25 @@ CELERY_TASKS_ALWAYS_EAGER: bool = False
 
 
 # rest_framework setup
+
 REST_FRAMEWORK: dict[str, list[str] | str | int] = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.BasicAuthentication',
         'user.backends.CustomJWTAuthentication'
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
     ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend'
+    ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 10,
 }
 
 # jwt setup
+
 SIMPLE_JWT: dict[str, timedelta | bool | str | None | tuple[str]] = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=10),
@@ -219,6 +225,30 @@ SIMPLE_JWT: dict[str, timedelta | bool | str | None | tuple[str]] = {
     'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
     'SLIDING_TOKEN_LIFETIME': timedelta(minutes=60),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=10),
+}
+
+# DRF Spectacular
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Alibaba Clone API",
+    "DESCRIPTION": "API documentation for Alibaba Clone Backend",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SORT_OPERATIONS": False,
+    "TAGS": [
+        {
+            "name": "Users and Auth Management API",
+            "description": "API for Users and Auth Management"
+        },
+        {
+            "name": "Products Management API",
+            "description": "API for Products and Categories Management"
+        },
+        # {
+        #     "name": "Templates Management API",
+        #     "description": "API for Templates Management"
+        # }
+    ]
 }
 
 # logging setup
