@@ -138,7 +138,7 @@ class VerifyCodeSerializer(Serializer):
                 code="invalid_otp_code_format"
             )
 
-        return data
+        return data | {"otp_secret": otp_secret}
 
 
 class LoginSerializer(Serializer):

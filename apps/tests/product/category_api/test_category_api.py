@@ -118,14 +118,13 @@ class TestCategoryViewSet:
     def test_retrieve_category_products(self, category_factory, product_factory):
         category = category_factory.create()
         product_factory.create_batch(3, category=category)
-
+        print(self.user.user_permissions, self.buyer_user.user_permissions, self.seller_user.user_permissions)
         response = self.client.get(f'{self.api}{category.id}/products/')
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data['results']) == 3
 
     def test_no_permissions(self, category_factory):
         category = category_factory.create(name="Electronics")
-
         response = self.buyer_client.get(f'{self.api}{category.id}/products/')
         assert response.status_code == status.HTTP_403_FORBIDDEN
 

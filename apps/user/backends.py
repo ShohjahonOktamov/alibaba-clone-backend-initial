@@ -1,22 +1,26 @@
 from typing import TYPE_CHECKING
+from typing import Type
 
-from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.authentication import JWTAuthentication, AuthUser
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import Token
 from share.services import TokenService
 
 from .enums import TokenType
+from .models import User
 
 if TYPE_CHECKING:
-    from typing import Type
     from django.contrib.auth.models import AbstractUser
     from rest_framework.request import Request
 
-UserModel: "Type[AbstractUser]" = get_user_model()
+UserModel: "Type[AbstractUser]" = User
 
 
 class CustomJWTAuthentication(JWTAuthentication):
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.user_model: Type[User] = User
+
     def authenticate(self, request: "Request") -> tuple[AuthUser, Token] | None:
         header: bytes | None = self.get_header(request=request)
         if header is None:

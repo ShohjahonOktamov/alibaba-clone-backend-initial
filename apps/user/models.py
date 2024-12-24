@@ -2,7 +2,7 @@ from uuid import uuid4
 
 from django.contrib.auth.models import Permission, AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.db.models import Model, CharField, BooleanField, ManyToManyField, ForeignKey, DateTimeField, AutoField, \
-    UUIDField, CASCADE, BinaryField, DateField, EmailField
+    UUIDField, CASCADE, BinaryField, DateField, EmailField, OneToOneField
 
 
 # Create your models here.
@@ -32,7 +32,7 @@ class UserManager(BaseUserManager):
         return self.create_user(email, password, **extra_fields)
 
 
-class User(AbstractBaseUser, PermissionsMixin, Model):
+class User(AbstractBaseUser, PermissionsMixin):
     objects: UserManager = UserManager()
 
     class Meta:
@@ -131,7 +131,7 @@ class SellerUser(Model):
     second_phone_number = CharField(max_length=13, null=True)
     building_number = CharField(max_length=50, null=True)
     apartment_number = CharField(max_length=50, null=True)
-    created_by = ForeignKey(to=User, null=True, on_delete=CASCADE, related_name="sellers")
+    created_by = OneToOneField(to=User, null=True, on_delete=CASCADE, related_name="seller")
     created_at = DateTimeField(auto_now_add=True)
     updated_at = DateTimeField(auto_now=True)
 
@@ -156,6 +156,6 @@ class BuyerUser(Model):
     second_phone_number = CharField(max_length=13, null=True)
     building_number = CharField(max_length=50, null=True)
     apartment_number = CharField(max_length=50, null=True)
-    created_by = ForeignKey(to=User, null=True, on_delete=CASCADE, related_name="buyers")
+    created_by = OneToOneField(to=User, null=True, on_delete=CASCADE, related_name="buyer")
     created_at = DateTimeField(auto_now_add=True)
     updated_at = DateTimeField(auto_now=True)

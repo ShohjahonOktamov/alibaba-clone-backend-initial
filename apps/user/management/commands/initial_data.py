@@ -1,5 +1,5 @@
 from typing import TYPE_CHECKING
-
+from user.models import User
 import yaml
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from typing import Type
     from django.contrib.auth.models import AbstractBaseUser
 
-UserModel: "Type[AbstractBaseUser]" = get_user_model()
+UserModel: "Type[AbstractBaseUser]" = User
 
 
 class Command(BaseCommand):

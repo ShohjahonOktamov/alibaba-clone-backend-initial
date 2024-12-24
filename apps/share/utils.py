@@ -4,7 +4,6 @@ from secrets import token_urlsafe
 from typing import TYPE_CHECKING
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password, check_password
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
@@ -14,6 +13,7 @@ from django.utils.translation import gettext_lazy as _
 from redis import Redis
 from user.models import Group
 from user.models import Policy
+from user.models import User
 
 from .exceptions import OTPException
 
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from typing import Type
     from django.contrib.auth.models import AbstractBaseUser
 
-UserModel: "Type[AbstractBaseUser]" = get_user_model()
+UserModel: "Type[AbstractBaseUser]" = User
 
 redis_conn: Redis = Redis.from_url(settings.REDIS_URL)
 

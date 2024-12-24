@@ -2,24 +2,25 @@ from secrets import token_urlsafe
 from typing import TYPE_CHECKING, Type, Any, Literal
 
 from django.conf import settings
-from django.contrib.auth import get_user_model, update_session_auth_hash
+from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.hashers import make_password
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.openapi import OpenApiAuthenticationExtension
 from drf_spectacular.utils import extend_schema_view, extend_schema
 from redis import Redis
-from rest_framework.views import APIView
 from rest_framework.generics import GenericAPIView, RetrieveAPIView, UpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_201_CREATED, HTTP_409_CONFLICT, HTTP_400_BAD_REQUEST, HTTP_200_OK, \
     HTTP_403_FORBIDDEN
+from rest_framework.views import APIView
 from share.permissions import GeneratePermissions
 from share.utils import generate_otp, redis_conn, check_otp
 
 from apps.share.exceptions import OTPException
 from .backends import CustomJWTAuthentication
 from .models import BuyerUser, SellerUser
+from .models import User
 from .serializers import UserSerializer, VerifyCodeSerializer, LoginSerializer, UsersMeSerializer, BuyerUserSerializer, \
     SellerUserSerializer, ChangePasswordSerializer, ForgotPasswordSerializer, ForgotPasswordVerifySerializer, \
     ResetPasswordSerializer
@@ -46,7 +47,7 @@ class MyAuthenticationScheme(OpenApiAuthenticationExtension):
         }
 
 
-UserModel: "Type[AbstractBaseUser]" = get_user_model()
+UserModel: "Type[AbstractBaseUser]" = User
 
 redis_conn: Redis = Redis.from_url(settings.REDIS_URL)
 
@@ -109,8 +110,7 @@ class VerifyView(GenericAPIView):
 
         phone_number: str = data["phone_number"]
         otp_code: str = data["otp_code"]
-
-        otp_secret: str = redis_conn.get(f"{phone_number}:otp_secret").decode()
+        otp_secret: str = data["otp_secret"]
 
         try:
             check_otp(phone_number_or_email=phone_number, otp_code=otp_code, otp_secret=otp_secret)
